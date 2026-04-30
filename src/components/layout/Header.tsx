@@ -11,7 +11,7 @@ const pageTitles: Record<string, string> = {
   '/patients': 'Patient Management',
 };
 
-const Header: React.FC = () => {
+const Header: React.FC<{ onMenuClick?: () => void }> = ({ onMenuClick }) => {
   const dispatch = useAppDispatch();
   const location = useLocation();
   const { notifications, panelOpen } = useAppSelector(s => s.notifications);
@@ -55,16 +55,30 @@ const Header: React.FC = () => {
 
   return (
     <header style={styles.header}>
-      <div style={styles.titleArea}>
-        <h2 style={styles.title}>{title}</h2>
-        <div style={styles.breadcrumb}>
-          {user?.displayName} · {new Date().toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' })}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+      
+        <button 
+          onClick={onMenuClick} 
+          style={styles.menuToggle}
+          className="mobile-only"
+        >
+          ☰
+        </button>
+        
+        <div style={styles.titleArea}>
+          <h2 style={styles.title}>{title}</h2>
+       
+          <div style={{...styles.breadcrumb, display: window.innerWidth < 480 ? 'none' : 'block'}}>
+            {user?.displayName} · {new Date().toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' })}
+          </div>
         </div>
       </div>
 
+    
       <div style={styles.actions}>
         <button style={styles.testBtn} onClick={handleTestNotification} title="Trigger test notification">
-          ⚡ Test Alert
+          {/* ⚡ Test Alert */}
+          {window.innerWidth <= 768 ? '⚡' : '⚡ Test Alert'}
         </button>
 
         <div style={{ position: 'relative' }} ref={panelRef}>
@@ -120,10 +134,33 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: '0 32px',
+    // padding: '0 32px',
+    padding: window.innerWidth <= 768 ? '0 16px' : '0 24px',
     position: 'sticky',
     top: 0,
     zIndex: 50,
+  },
+  hamburger: {
+    display: window.innerWidth > 1024 ? 'none' : 'flex',
+    background: 'var(--bg-elevated)',
+    border: '1px solid var(--border)',
+    borderRadius: 8,
+    width: 36,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: 20,
+    cursor: 'pointer',
+    color: 'var(--text-primary)',
+  },
+  menuToggle: {
+    display: window.innerWidth <= 768 ? 'block' : 'none',
+    background: 'none',
+    border: 'none',
+    fontSize: '24px',
+    color: 'var(--text-primary)',
+    cursor: 'pointer',
+    padding: 0
   },
   titleArea: { display: 'flex', flexDirection: 'column', gap: 2 },
   title: { fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 20, letterSpacing: '-0.5px' },
@@ -171,13 +208,15 @@ const styles: Record<string, React.CSSProperties> = {
   panel: {
     position: 'absolute',
     top: 'calc(100% + 8px)',
-    right: 0,
-    width: 360,
+    // right: 0,
+    // width: 360,
     background: 'var(--bg-card)',
     border: '1px solid var(--border)',
     borderRadius: 14,
     boxShadow: 'var(--shadow)',
     overflow: 'hidden',
+    width: window.innerWidth <= 400 ? 'calc(100vw - 32px)' : 360, // Full width on tiny screens
+    right: window.innerWidth <= 400 ? -16 : 0,
   },
   panelHeader: {
     display: 'flex',

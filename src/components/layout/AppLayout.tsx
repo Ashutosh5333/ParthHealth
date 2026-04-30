@@ -6,14 +6,24 @@ import Header from './Header';
 
 const AppLayout: React.FC = () => {
   const { isAuthenticated } = useAppSelector(s => s.auth);
+  const [isMobileMenuOpen, setMobileMenuOpen] = React.useState(false);
 
   if (!isAuthenticated) return <Navigate to="/login" replace />;
 
   return (
     <div style={styles.layout}>
-      <Sidebar />
-      <div style={styles.main}>
-        <Header />
+      {/* <Sidebar /> */}
+      <div style={{
+        ...styles.sidebarContainer,
+        transform: window.innerWidth <= 768 && !isMobileMenuOpen ? 'translateX(-100%)' : 'translateX(0)'
+      }}>
+        <Sidebar />
+      </div>
+      <div style={{
+        ...styles.main,
+        marginLeft: window.innerWidth <= 768 ? 0 : 'var(--sidebar-w)'
+      }}>
+      <Header onMenuClick={() => setMobileMenuOpen(!isMobileMenuOpen)} />
         <main style={styles.content}>
           <Outlet />
         </main>

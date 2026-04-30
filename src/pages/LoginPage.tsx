@@ -16,13 +16,36 @@ const LoginPage: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [focusedField, setFocusedField] = useState<string | null>(null);
 
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  const [showSuccess, setShowSuccess] = useState(false);
+
   useEffect(() => {
     if (isAuthenticated) navigate("/dashboard");
   }, [isAuthenticated, navigate]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (email && password) dispatch(loginUser({ email, password }));
+    setValidationErrors([]);
+
+    // 1. Local Validation
+    const errors: string[] = [];
+    if (!email.includes("@")) errors.push("email");
+    if (password.length < 1) errors.push("password");
+
+    if (errors.length > 0) {
+      setValidationErrors(errors);
+      return;
+    }
+
+    // 2. Dispatch Login
+    const result = await dispatch(loginUser({ email, password }));
+    
+    // 3. Handle Success Overlay
+    if (loginUser.fulfilled.match(result)) {
+      setShowSuccess(true);
+      setTimeout(() => navigate("/dashboard"), 2000);
+    }
   };
 
   const fillDemo = (role: string) => {
@@ -33,6 +56,7 @@ const LoginPage: React.FC = () => {
     };
     setEmail(creds[role].email);
     setPassword(creds[role].password);
+    setValidationErrors([]); 
     dispatch(clearError());
   };
 
@@ -42,6 +66,16 @@ const LoginPage: React.FC = () => {
       <div style={styles.grid} />
       <div style={styles.glow1} />
       <div style={styles.glow2} />
+
+      {showSuccess && (
+        <div style={styles.successOverlay} className="animate-in">
+          <div style={styles.successCard}>
+            <div style={{ fontSize: 40 }}>🩺</div>
+            <h3 style={{ margin: "10px 0", color: "var(--text-primary)" }}>Credentials Verified</h3>
+            <p style={{ color: "var(--text-secondary)" }}>Accessing clinical environment...</p>
+          </div>
+        </div>
+      )}
 
       <div style={styles.container} className="animate-in">
         {/* Left panel */}
@@ -133,36 +167,31 @@ const LoginPage: React.FC = () => {
           </div>
 
           <form onSubmit={handleSubmit} style={styles.form}>
-            <div style={styles.field}>
+          <div style={styles.field}>
               <label style={styles.label}>Email Address</label>
-              <div style={{ position: "relative" }}>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => {
-                    setEmail(e.target.value);
-                    dispatch(clearError());
-                  }}
-                  onFocus={() => setFocusedField("email")}
-                  onBlur={() => setFocusedField(null)}
-                  placeholder="you@raga.health"
-                  style={{
-                    ...styles.input,
-                    borderColor:
-                      focusedField === "email"
-                        ? "var(--accent)"
-                        : error
-                        ? "var(--red)"
-                        : "var(--border)",
-                    boxShadow:
-                      focusedField === "email"
-                        ? "0 0 0 3px var(--accent-dim)"
-                        : "none",
-                  }}
-                  required
-                />
-              </div>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  setValidationErrors(prev => prev.filter(err => err !== "email"));
+                  dispatch(clearError());
+                }}
+                onFocus={() => setFocusedField("email")}
+                onBlur={() => setFocusedField(null)}
+                placeholder="you@raga.health"
+                style={{
+                  ...styles.input,
+               
+                  borderColor: validationErrors.includes("email") 
+                    ? "var(--red)" 
+                    : focusedField === "email" ? "var(--accent)" : "var(--border)",
+                  boxShadow: validationErrors.includes("email") ? "0 0 0 2px rgba(240,86,86,0.2)" : "none"
+                }}
+                required
+              />
             </div>
+
             <div style={styles.field}>
               <label style={styles.label}>Password</label>
               <div style={{ position: "relative" }}>
@@ -171,65 +200,39 @@ const LoginPage: React.FC = () => {
                   value={password}
                   onChange={(e) => {
                     setPassword(e.target.value);
+                    setValidationErrors(prev => prev.filter(err => err !== "password"));
                     dispatch(clearError());
                   }}
                   onFocus={() => setFocusedField("password")}
                   onBlur={() => setFocusedField(null)}
-                  placeholder="Enter your password"
+                  placeholder="••••••••"
                   style={{
                     ...styles.input,
                     paddingRight: 48,
-                    borderColor:
-                      focusedField === "password"
-                        ? "var(--accent)"
-                        : error
-                        ? "var(--red)"
-                        : "var(--border)",
-                    boxShadow:
-                      focusedField === "password"
-                        ? "0 0 0 3px var(--accent-dim)"
-                        : "none",
+                    borderColor: validationErrors.includes("password") 
+                      ? "var(--red)" 
+                      : focusedField === "password" ? "var(--accent)" : "var(--border)",
+                    boxShadow: validationErrors.includes("password") ? "0 0 0 2px rgba(240,86,86,0.2)" : "none"
                   }}
                   required
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  style={styles.eyeBtn}
-                >
+                <button type="button" onClick={() => setShowPassword(!showPassword)} style={styles.eyeBtn}>
                   {showPassword ? "🙈" : "👁"}
                 </button>
               </div>
             </div>
+
             {error && (
               <div style={styles.errorBox} className="animate-in">
                 <span>⚠️</span> {error}
               </div>
             )}
 
-         
-
-            <button
-              type="submit"
-              disabled={loading || !email || !password}
-              style={styles.submitBtn}
-            >
-              {loading ? (
-                <span
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 8,
-                    justifyContent: "center",
-                  }}
-                >
-                  <span className="loader" style={{ width: 16, height: 16 }} />
-                  Authenticating...
-                </span>
-              ) : (
-                "Sign In →"
-              )}
+         <button type="submit" disabled={loading || showSuccess} style={styles.submitBtn}>
+              {loading ? "Authenticating..." : "Sign In →"}
             </button>
+
+
         
             <div style={{ textAlign: "center", marginTop: 15 }}>
               <p style={{ color: "var(--text-secondary)", fontSize: 14 }}>
@@ -250,7 +253,7 @@ const LoginPage: React.FC = () => {
           </form>
 
           <p style={styles.hint}>
-            🔐 Secured by Firebase Authentication · HIPAA Compliant
+            🔐 Secured by Firebase Authentication .
           </p>
         </div>
       </div>
@@ -483,6 +486,27 @@ const styles: Record<string, React.CSSProperties> = {
     textAlign: "center",
     marginTop: "auto",
     paddingTop: 16,
+  },
+
+  successOverlay: {
+    position: "fixed",
+    inset: 0,
+    background: "rgba(7, 22, 40, 0.85)", 
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 1000,
+    backdropFilter: "blur(10px)",
+  },
+  successCard: {
+    background: "var(--bg-card)",
+    padding: "48px",
+    borderRadius: "28px",
+    textAlign: "center",
+    border: "1px solid var(--accent)",
+    boxShadow: "0 0 50px rgba(0, 212, 170, 0.15)",
+    maxWidth: "360px",
+    animation: "scaleUp 0.3s ease-out",
   },
 };
 

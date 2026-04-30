@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAppSelector } from '../hooks/redux';
 
@@ -33,6 +33,15 @@ const PatientDetailPage: React.FC = () => {
   const { patients } = useAppSelector(s => s.patients);
   const patient = patients.find(p => p.id === id);
 
+  // Responsive state logic
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 968);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 968);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   if (!patient) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '60vh', gap: 16 }}>
@@ -53,37 +62,41 @@ const PatientDetailPage: React.FC = () => {
 
   return (
     <div style={styles.page} className="animate-in">
-      {/* Back + header */}
       <div style={styles.topRow}>
         <button style={styles.backBtn} onClick={() => navigate('/patients')}>← Back</button>
-        <div style={styles.patientHeader}>
+        <div style={{...styles.patientHeader, padding: isMobile ? '16px' : '24px'}}>
           <div style={styles.bigAvatar}>{patient.name.charAt(0)}</div>
-          <div style={{ flex: 1 }}>
+          <div style={{ flex: 1, minWidth: isMobile ? '200px' : 'auto' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' as const }}>
-              <h1 style={styles.patientName}>{patient.name}</h1>
+              <h1 style={{...styles.patientName, fontSize: isMobile ? 22 : 26}}>{patient.name}</h1>
               <span className={`badge ${statusBgMap[patient.status]}`}>
                 <span className={`status-dot dot-${patient.status.toLowerCase()}`} />
                 {patient.status}
               </span>
             </div>
             <div style={styles.patientMeta}>
-              {patient.id} · {patient.age} years old · {patient.gender} · Blood Type: <strong>{patient.bloodType}</strong>
+              {patient.id} · {patient.age}y · {patient.gender} · <strong>{patient.bloodType}</strong>
             </div>
           </div>
-          <div style={styles.headerRight}>
+          <div style={{...styles.headerRight, alignItems: isMobile ? 'flex-start' : 'flex-end', marginLeft: isMobile ? '0' : 'auto'}}>
             <div style={styles.infoChip}>🏥 {patient.room}</div>
             <div style={styles.infoChip}>👨‍⚕️ {patient.doctor}</div>
           </div>
         </div>
       </div>
 
-      <div style={styles.mainGrid}>
+      <div style={{
+        ...styles.mainGrid, 
+        gridTemplateColumns: isMobile ? '1fr' : '1fr 380px'
+      }}>
         {/* Left column */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-          {/* Vitals */}
           <div className="card">
             <h3 style={styles.sectionTitle}>📊 Current Vitals</h3>
-            <div style={styles.vitalsGrid}>
+            <div style={{
+                ...styles.vitalsGrid,
+                gridTemplateColumns: window.innerWidth < 480 ? '1fr' : 'repeat(2, 1fr)'
+            }}>
               <VitalCard icon="❤️" label="Heart Rate" value={String(patient.vitals.heartRate)} unit="bpm" color={isCriticalHR ? 'var(--red)' : 'var(--accent)'} alert={isCriticalHR} />
               <VitalCard icon="🩺" label="Blood Pressure" value={patient.vitals.bloodPressure} unit="mmHg" color="var(--blue)" />
               <VitalCard icon="🌡" label="Temperature" value={String(patient.vitals.temperature)} unit="°C" color={isCriticalTemp ? 'var(--yellow)' : 'var(--accent)'} alert={isCriticalTemp} />
@@ -91,7 +104,6 @@ const PatientDetailPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Medications */}
           <div className="card">
             <h3 style={styles.sectionTitle}>💊 Current Medications</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
@@ -104,7 +116,6 @@ const PatientDetailPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Allergies */}
           <div className="card">
             <h3 style={styles.sectionTitle}>⚠️ Allergies</h3>
             <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 8, marginTop: 12 }}>
@@ -116,7 +127,6 @@ const PatientDetailPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Notes */}
           <div className="card">
             <h3 style={styles.sectionTitle}>📝 Clinical Notes</h3>
             <p style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.7, marginTop: 8 }}>{patient.notes}</p>
@@ -125,7 +135,6 @@ const PatientDetailPage: React.FC = () => {
 
         {/* Right column */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-          {/* Contact info */}
           <div className="card">
             <h3 style={styles.sectionTitle}>👤 Patient Information</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginTop: 14 }}>
@@ -143,7 +152,6 @@ const PatientDetailPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Timeline */}
           <div className="card">
             <h3 style={styles.sectionTitle}>📅 Appointment Timeline</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginTop: 16 }}>
@@ -165,7 +173,6 @@ const PatientDetailPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Quick actions */}
           <div className="card">
             <h3 style={styles.sectionTitle}>⚡ Quick Actions</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 12 }}>
@@ -187,8 +194,9 @@ const PatientDetailPage: React.FC = () => {
   );
 };
 
+// Original styles kept intact
 const styles: Record<string, React.CSSProperties> = {
-  page: { display: 'flex', flexDirection: 'column', gap: 24 },
+  page: { display: 'flex', flexDirection: 'column', gap: 24, padding: '20px' },
   topRow: { display: 'flex', flexDirection: 'column', gap: 16 },
   backBtn: {
     background: 'var(--bg-elevated)',

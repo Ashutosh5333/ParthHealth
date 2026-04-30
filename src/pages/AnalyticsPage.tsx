@@ -6,6 +6,19 @@ import {
 } from 'recharts';
 import { mockAnalytics } from '../utils/mockData';
 
+const ResponsiveStyles = () => (
+  <style>{`
+    @media (max-width: 1024px) {
+      .kpi-grid-res { grid-template-columns: repeat(2, 1fr) !important; }
+    }
+    @media (max-width: 768px) {
+      .kpi-grid-res { grid-template-columns: 1fr !important; }
+      .flex-row-res { flex-direction: column !important; }
+      .flex-row-res > div { flex: none !important; width: 100% !important; }
+    }
+  `}</style>
+);
+
 const SectionTitle: React.FC<{ children: React.ReactNode; sub?: string }> = ({ children, sub }) => (
   <div style={{ marginBottom: 20 }}>
     <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 17, color: 'var(--text-primary)' }}>{children}</h3>
@@ -45,8 +58,10 @@ const AnalyticsPage: React.FC = () => {
 
   return (
     <div style={styles.page} className="animate-in">
-      {/* KPI Row */}
-      <div style={styles.kpiGrid}>
+      <ResponsiveStyles />
+      
+      {/* KPI Row - Added responsive class */}
+      <div style={styles.kpiGrid} className="kpi-grid-res">
         {kpis.map(k => (
           <div key={k.label} className="card" style={{ borderTop: `2px solid ${k.color}` }}>
             <div style={styles.kpiLabel}>{k.label}</div>
@@ -58,8 +73,8 @@ const AnalyticsPage: React.FC = () => {
         ))}
       </div>
 
-      {/* Charts Row 1 */}
-      <div style={styles.row2}>
+      {/* Charts Row 1 - Added responsive class */}
+      <div style={styles.row2} className="flex-row-res">
         <div className="card" style={{ flex: 2 }}>
           <SectionTitle sub="Monthly patient admissions across all departments">Patient Admissions Trend</SectionTitle>
           <ResponsiveContainer width="100%" height={220}>
@@ -95,8 +110,8 @@ const AnalyticsPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Charts Row 2 */}
-      <div style={styles.row2}>
+      {/* Charts Row 2 - Added responsive class */}
+      <div style={styles.row2} className="flex-row-res">
         <div className="card" style={{ flex: 1 }}>
           <SectionTitle sub="Revenue vs Expenses (in Lakhs INR)">Financial Performance</SectionTitle>
           <ResponsiveContainer width="100%" height={220}>

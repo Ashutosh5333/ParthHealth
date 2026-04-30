@@ -4,6 +4,49 @@ import { useAppSelector, useAppDispatch } from '../hooks/redux';
 import { setViewMode, setSearchQuery, setStatusFilter } from '../store/slices/patientsSlice';
 import { Patient } from '../types';
 
+
+const ResponsiveStyles = () => (
+  <style>{`
+    @media (max-width: 768px) {
+      /* Stack Top Bar */
+      .top-bar-res {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 20px !important;
+      }
+      
+      .controls-res {
+        width: 100% !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+      }
+
+      .search-wrap-res {
+        width: 100% !important;
+      }
+
+      .search-input-res {
+        width: 100% !important;
+      }
+
+      /* Handle Table Overflow */
+      .table-container-res {
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      .table-res {
+        min-width: 800px; /* Prevents text squishing */
+      }
+      
+      /* Grid adjustments */
+      .grid-res {
+        grid-template-columns: 1fr !important;
+      }
+    }
+  `}</style>
+);
+
 const StatusBadge: React.FC<{ status: Patient['status'] }> = ({ status }) => {
   const cls = {
     Critical: 'badge-critical',
@@ -188,15 +231,17 @@ const PatientsPage: React.FC = () => {
 
   return (
     <div style={styles.page} className="animate-in">
+      <ResponsiveStyles />
+      
       {/* Top bar */}
-      <div style={styles.topBar}>
+      <div style={styles.topBar} className="top-bar-res">
         <div>
           <h2 style={styles.title}>Patient Registry</h2>
           <p style={styles.sub}>{filtered.length} of {patients.length} patients</p>
         </div>
-        <div style={styles.controls}>
+        <div style={styles.controls} className="controls-res">
           {/* Search */}
-          <div style={styles.searchWrap}>
+          <div style={styles.searchWrap} className="search-wrap-res">
             <span style={styles.searchIcon}>🔍</span>
             <input
               type="text"
@@ -204,6 +249,7 @@ const PatientsPage: React.FC = () => {
               value={searchQuery}
               onChange={e => dispatch(setSearchQuery(e.target.value))}
               style={styles.searchInput}
+              className="search-input-res"
             />
           </div>
 
@@ -248,7 +294,7 @@ const PatientsPage: React.FC = () => {
 
       {/* Grid View */}
       {viewMode === 'grid' && (
-        <div style={styles.grid}>
+        <div style={styles.grid} className="grid-res">
           {filtered.map(p => (
             <PatientGridCard key={p.id} patient={p} onClick={() => navigate(`/patients/${p.id}`)} />
           ))}
@@ -257,8 +303,8 @@ const PatientsPage: React.FC = () => {
 
       {/* List View */}
       {viewMode === 'list' && (
-        <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-          <table style={styles.table}>
+        <div className="card table-container-res" style={{ padding: 0, overflow: 'hidden' }}>
+          <table style={styles.table} className="table-res">
             <thead>
               <tr style={styles.thead}>
                 {['Patient', 'Age / Gender', 'Condition', 'Status', 'Doctor', 'Room', 'Vitals'].map(h => (
@@ -310,6 +356,7 @@ const styles: Record<string, React.CSSProperties> = {
     border: '1px solid var(--border)',
     borderRadius: 10,
     overflow: 'hidden',
+    flexShrink: 0,
   },
   toggleBtn: {
     padding: '9px 16px',

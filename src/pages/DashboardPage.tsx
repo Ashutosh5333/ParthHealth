@@ -89,7 +89,7 @@ const DashboardPage: React.FC = () => {
 
       <div style={styles.lower}>
         {/* Critical patients */}
-        <div className="card" style={{ flex: 2 }}>
+        <div className="card" style={{ flex: '1 1 500px' }}>
           <div style={styles.sectionHeader}>
             <h3 style={styles.sectionTitle}>⚡ Critical Patients</h3>
             <button style={styles.viewAllBtn} onClick={() => navigate('/patients')}>View All →</button>
@@ -118,7 +118,7 @@ const DashboardPage: React.FC = () => {
         </div>
 
         {/* Activity feed */}
-        <div className="card" style={{ flex: 1 }}>
+        <div className="card" style={{ flex: '1 1 300px' }}>
           <h3 style={styles.sectionTitle}>📋 Recent Activity</h3>
           <div style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 0 }}>
             {recentActivities.map((a, i) => (
@@ -169,6 +169,7 @@ const DashboardPage: React.FC = () => {
 
 const styles: Record<string, React.CSSProperties> = {
   page: { display: 'flex', flexDirection: 'column', gap: 24 },
+
   banner: {
     background: 'linear-gradient(135deg, var(--bg-card) 0%, rgba(0,212,170,0.08) 100%)',
     border: '1px solid var(--border)',
@@ -177,7 +178,20 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
+    flexWrap: 'wrap', 
+    gap: 16
   },
+
+  // banner: {
+  //   background: 'linear-gradient(135deg, var(--bg-card) 0%, rgba(0,212,170,0.08) 100%)',
+  //   border: '1px solid var(--border)',
+  //   borderRadius: 'var(--radius-lg)',
+  //   padding: '24px 28px',
+  //   display: 'flex',
+  //   alignItems: 'center',
+  //   justifyContent: 'space-between',
+  // },
+
   welcome: { fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 24, marginBottom: 4 },
   welcomeSub: { color: 'var(--text-secondary)', fontSize: 14 },
   bannerBadge: {
@@ -189,8 +203,14 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: 100,
     padding: '8px 16px',
   },
-  statsGrid: { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 },
-  lower: { display: 'flex', gap: 20 },
+  statsGrid: { display: 'grid', 
+    // gridTemplateColumns: 'repeat(4, 1fr)', 
+    gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+    gap: 16 },
+  lower: { display: 'flex',
+    flexWrap: 'wrap', 
+    gap: 20 },
+    
   sectionHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
   sectionTitle: { fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 16 },
   viewAllBtn: {
@@ -240,7 +260,13 @@ const styles: Record<string, React.CSSProperties> = {
   actDot: { width: 8, height: 8, borderRadius: '50%', marginTop: 5, flexShrink: 0 },
   actText: { fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.5 },
   actTime: { fontSize: 11, color: 'var(--text-muted)', marginTop: 3 },
-  doctorsGrid: { display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 },
+  // doctorsGrid: { display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 },
+  doctorsGrid: { 
+    display: 'grid', 
+    gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', // Wraps doctor cards
+    gap: 12 
+  },
+
   doctorCard: {
     display: 'flex',
     alignItems: 'center',

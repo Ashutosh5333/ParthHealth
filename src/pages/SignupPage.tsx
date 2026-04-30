@@ -190,6 +190,26 @@ export const SignupPage: React.FC = () => {
 };
 
 const styles: Record<string, React.CSSProperties> = {
+  successOverlay: {
+    position: "fixed",
+    inset: 0,
+    background: "rgba(7, 22, 40, 0.85)", // Dark semi-transparent background
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 1000,
+    backdropFilter: "blur(10px)",
+  },
+  successCard: {
+    background: "var(--bg-card)",
+    padding: "48px",
+    borderRadius: "28px",
+    textAlign: "center",
+    border: "1px solid var(--accent)",
+    boxShadow: "0 0 50px rgba(0, 212, 170, 0.15)",
+    maxWidth: "360px",
+    animation: "scaleUp 0.3s ease-out",
+  },
   page: {
     minHeight: "100vh",
     display: "flex",

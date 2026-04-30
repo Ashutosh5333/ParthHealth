@@ -84,8 +84,23 @@ const Sidebar: React.FC = () => {
 };
 
 const styles: Record<string, React.CSSProperties> = {
+  // sidebar: {
+  //   width: 'var(--sidebar-w)',
+  //   height: '100vh',
+  //   background: 'var(--bg-secondary)',
+  //   borderRight: '1px solid var(--border)',
+  //   display: 'flex',
+  //   flexDirection: 'column',
+  //   position: 'fixed',
+  //   left: 0,
+  //   top: 0,
+  //   zIndex: 100,
+  //   padding: '24px 0',
+  // },
+
   sidebar: {
-    width: 'var(--sidebar-w)',
+    // Change width to a fixed value or 0 if hidden
+    width: 'var(--sidebar-w)', 
     height: '100vh',
     background: 'var(--bg-secondary)',
     borderRight: '1px solid var(--border)',
@@ -96,7 +111,9 @@ const styles: Record<string, React.CSSProperties> = {
     top: 0,
     zIndex: 100,
     padding: '24px 0',
+    transition: 'transform 0.3s ease',
   },
+
   logo: {
     display: 'flex',
     alignItems: 'center',
