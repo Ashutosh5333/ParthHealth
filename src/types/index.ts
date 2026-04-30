@@ -4,6 +4,7 @@ export interface User {
   displayName: string;
   role: 'admin' | 'doctor' | 'nurse';
   avatar?: string;
+  token: string;
 }
 
 export interface Patient {

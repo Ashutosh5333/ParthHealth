@@ -10,6 +10,7 @@ import AnalyticsPage from './pages/AnalyticsPage';
 import PatientsPage from './pages/PatientsPage';
 import PatientDetailPage from './pages/PatientDetailPage';
 import './styles/globals.css';
+import { SignupPage } from './pages/SignupPage';
 
 const AppContent: React.FC = () => {
   useEffect(() => {
@@ -20,6 +21,8 @@ const AppContent: React.FC = () => {
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/signup" element={<SignupPage />} />
+
         <Route element={<AppLayout />}>
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/analytics" element={<AnalyticsPage />} />

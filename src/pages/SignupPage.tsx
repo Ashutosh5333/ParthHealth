@@ -1,64 +1,74 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../hooks/redux";
-import {
-  loginUser,
-  clearError
-} from "../store/slices/authSlice";
+import { signupUser, clearError } from "../store/slices/authSlice";
 
-
-const LoginPage: React.FC = () => {
+export const SignupPage: React.FC = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const { loading, error, isAuthenticated } = useAppSelector((s) => s.auth);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
+  const [role, setRole] = useState<"doctor" | "nurse">("doctor");
   const [focusedField, setFocusedField] = useState<string | null>(null);
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  const [showSuccess, setShowSuccess] = useState(false);
 
   useEffect(() => {
     if (isAuthenticated) navigate("/dashboard");
   }, [isAuthenticated, navigate]);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (email && password) dispatch(loginUser({ email, password }));
-  };
+ 
 
-  const fillDemo = (role: string) => {
-    const creds: Record<string, { email: string; password: string }> = {
-      admin: { email: "admin@raga.health", password: "Admin@123" },
-      doctor: { email: "doctor@raga.health", password: "Doctor@123" },
-      nurse: { email: "nurse@raga.health", password: "Nurse@123" },
-    };
-    setEmail(creds[role].email);
-    setPassword(creds[role].password);
-    dispatch(clearError());
+  const handleSignup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setValidationErrors([]); 
+    
+    const errors: string[] = [];
+    if (!email.includes("@")) errors.push("email");
+    if (password.length < 8) errors.push("password");
+    
+    if (errors.length > 0) {
+      setValidationErrors(errors);
+      return;
+    }
+
+    // 2. Dispatch Action
+    const result = await dispatch(signupUser({ email, password, role }));
+    
+    if (signupUser.fulfilled.match(result)) {
+      setShowSuccess(true);
+   
+      setTimeout(() => navigate("/dashboard"), 2500);
+    }
   };
 
   return (
     <div style={styles.page}>
-      {/* Background grid */}
+
+
+
       <div style={styles.grid} />
       <div style={styles.glow1} />
       <div style={styles.glow2} />
-
+      {showSuccess && (
+        <div style={styles.successOverlay} className="animate-in">
+          <div style={styles.successCard}>
+            <div style={{ fontSize: 40 }}>🚀</div>
+            <h3 style={{ margin: "10px 0" }}>Welcome to the future, Doc!</h3>
+            <p>Scrubbing in... we're preparing your clinical suite.</p>
+          </div>
+        </div>
+      )}
       <div style={styles.container} className="animate-in">
-        {/* Left panel */}
+        {/* Left Panel - Shared Hero */}
         <div style={styles.leftPanel}>
           <div style={styles.logoArea}>
             <div style={styles.logoIcon}>
               <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
                 <rect x="12" y="2" width="4" height="24" rx="2" fill="white" />
                 <rect x="2" y="12" width="24" height="4" rx="2" fill="white" />
-                <circle
-                  cx="14"
-                  cy="14"
-                  r="5"
-                  fill="none"
-                  stroke="white"
-                  strokeWidth="2"
-                />
+                <circle cx="14" cy="14" r="5" fill="none" stroke="white" strokeWidth="2" />
               </svg>
             </div>
             <div>
@@ -69,188 +79,109 @@ const LoginPage: React.FC = () => {
 
           <div style={styles.heroContent}>
             <h1 style={styles.heroTitle}>
-              Healthcare
-              <br />
-              Intelligence
-              <br />
-              <span style={{ color: "var(--accent)" }}>Redefined.</span>
+              Join the<br />Future of<br />
+              <span style={{ color: "var(--accent)" }}>Clinical Care.</span>
             </h1>
             <p style={styles.heroDesc}>
-              Unified patient management, real-time analytics, and clinical
-              workflows — built for modern healthcare teams.
+              Create your professional account to access unified patient records 
+              and AI-driven healthcare intelligence.
             </p>
           </div>
 
-          <div style={styles.statsRow}>
-            {[
-              { value: "12K+", label: "Patients" },
-              { value: "98%", label: "Uptime" },
-              { value: "4 Depts", label: "Connected" },
-            ].map((s) => (
-              <div key={s.label} style={styles.stat}>
-                <div style={styles.statValue}>{s.value}</div>
-                <div style={styles.statLabel}>{s.label}</div>
-              </div>
-            ))}
-          </div>
-
           <div style={styles.pulseBar}>
-            <div style={styles.pulseText}>System Status</div>
+            <div style={styles.pulseText}>Security Compliance</div>
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <span
-                className="status-dot dot-stable"
-                style={{ width: 8, height: 8 }}
-              />
-              <span
-                style={{
-                  color: "var(--accent)",
-                  fontSize: 13,
-                  fontWeight: 600,
-                }}
-              >
-                All Systems Operational
+              <span style={{ color: "var(--accent)", fontSize: 13, fontWeight: 600 }}>
+                HIPAA & SOC2 Ready
               </span>
             </div>
           </div>
         </div>
 
-        {/* Right panel - login form */}
+        {/* Right Panel - Signup Form */}
         <div style={styles.rightPanel}>
-          <h2 style={styles.formTitle}>Sign in to your account</h2>
-          <p style={styles.formSub}>Use demo credentials or your own account</p>
+          <h2 style={styles.formTitle}>Create your account</h2>
+          <p style={styles.formSub}>Enter clinical details to get started</p>
 
-          {/* Demo quick-fill */}
-          <div style={styles.demoRow}>
-            {["admin", "doctor", "nurse"].map((role) => (
-              <button
-                key={role}
-                style={styles.demoBtn}
-                onClick={() => fillDemo(role)}
+          <form onSubmit={handleSignup} style={styles.form}>
+           
+            <div style={styles.field}>
+              <label style={styles.label}>Clinical Email</label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => { 
+                  setEmail(e.target.value); 
+                  setValidationErrors(prev => prev.filter(err => err !== "email"));
+                }}
+                placeholder="you@raga.health"
+                style={{
+                  ...styles.input,
+                  
+                  borderColor: validationErrors.includes("email") 
+                    ? "var(--red)" 
+                    : focusedField === "email" ? "var(--accent)" : "var(--border)",
+                  boxShadow: validationErrors.includes("email") ? "0 0 0 2px rgba(240,86,86,0.2)" : "none"
+                }}
+                onFocus={() => setFocusedField("email")}
+                onBlur={() => setFocusedField(null)}
+              />
+            </div>
+
+           
+<div style={styles.field}>
+              <label style={styles.label}>Secure Password</label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  setValidationErrors(prev => prev.filter(err => err !== "password"));
+                }}
+                placeholder="Min. 8 characters"
+                style={{
+                  ...styles.input,
+                  borderColor: validationErrors.includes("password") 
+                    ? "var(--red)" 
+                    : focusedField === "password" ? "var(--accent)" : "var(--border)",
+                  boxShadow: validationErrors.includes("password") ? "0 0 0 2px rgba(240,86,86,0.2)" : "none"
+                }}
+                onFocus={() => setFocusedField("password")}
+                onBlur={() => setFocusedField(null)}
+              />
+              {validationErrors.includes("password") && (
+                <span style={{ fontSize: 11, color: "var(--red)", marginTop: 4 }}>
+                  Password must be at least 8 characters long.
+                </span>
+              )}
+            </div>
+            <div style={styles.field}>
+              <label style={styles.label}>Clinical Role</label>
+              <select
+                value={role}
+                onChange={(e) => setRole(e.target.value as any)}
+                style={styles.input}
               >
-                {role.charAt(0).toUpperCase() + role.slice(1)}
-              </button>
-            ))}
-          </div>
+                <option value="doctor">Medical Doctor (MD/DO)</option>
+                <option value="nurse">Registered Nurse (RN/NP)</option>
+              </select>
+            </div>
 
-          <form onSubmit={handleSubmit} style={styles.form}>
-            <div style={styles.field}>
-              <label style={styles.label}>Email Address</label>
-              <div style={{ position: "relative" }}>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => {
-                    setEmail(e.target.value);
-                    dispatch(clearError());
-                  }}
-                  onFocus={() => setFocusedField("email")}
-                  onBlur={() => setFocusedField(null)}
-                  placeholder="you@raga.health"
-                  style={{
-                    ...styles.input,
-                    borderColor:
-                      focusedField === "email"
-                        ? "var(--accent)"
-                        : error
-                        ? "var(--red)"
-                        : "var(--border)",
-                    boxShadow:
-                      focusedField === "email"
-                        ? "0 0 0 3px var(--accent-dim)"
-                        : "none",
-                  }}
-                  required
-                />
-              </div>
-            </div>
-            <div style={styles.field}>
-              <label style={styles.label}>Password</label>
-              <div style={{ position: "relative" }}>
-                <input
-                  type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => {
-                    setPassword(e.target.value);
-                    dispatch(clearError());
-                  }}
-                  onFocus={() => setFocusedField("password")}
-                  onBlur={() => setFocusedField(null)}
-                  placeholder="Enter your password"
-                  style={{
-                    ...styles.input,
-                    paddingRight: 48,
-                    borderColor:
-                      focusedField === "password"
-                        ? "var(--accent)"
-                        : error
-                        ? "var(--red)"
-                        : "var(--border)",
-                    boxShadow:
-                      focusedField === "password"
-                        ? "0 0 0 3px var(--accent-dim)"
-                        : "none",
-                  }}
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  style={styles.eyeBtn}
-                >
-                  {showPassword ? "🙈" : "👁"}
-                </button>
-              </div>
-            </div>
             {error && (
-              <div style={styles.errorBox} className="animate-in">
+              <div style={styles.errorBox}>
                 <span>⚠️</span> {error}
               </div>
             )}
 
-         
-
-            <button
-              type="submit"
-              disabled={loading || !email || !password}
-              style={styles.submitBtn}
-            >
-              {loading ? (
-                <span
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 8,
-                    justifyContent: "center",
-                  }}
-                >
-                  <span className="loader" style={{ width: 16, height: 16 }} />
-                  Authenticating...
-                </span>
-              ) : (
-                "Sign In →"
-              )}
+<button type="submit" disabled={loading || showSuccess} style={styles.submitBtn}>
+              {loading ? "Verifying Credentials..." : "Scrub In →"}
             </button>
-        
-            <div style={{ textAlign: "center", marginTop: 15 }}>
-              <p style={{ color: "var(--text-secondary)", fontSize: 14 }}>
-                New to the platform?{" "}
-                <Link
-                  to="/signup"
-                  style={{
-                    color: "var(--accent)",
-                    textDecoration: "none",
-                    fontWeight: 600,
-                    marginLeft: 4,
-                  }}
-                >
-                  Create an account
-                </Link>
-              </p>
-            </div>
+       
+           
           </form>
 
           <p style={styles.hint}>
-            🔐 Secured by Firebase Authentication · HIPAA Compliant
+            Already have an account? <Link to="/login" style={{ color: "var(--accent)", textDecoration: "none", fontWeight: 600 }}>Sign In</Link>
           </p>
         </div>
       </div>
@@ -485,5 +416,3 @@ const styles: Record<string, React.CSSProperties> = {
     paddingTop: 16,
   },
 };
-
-export default LoginPage;
