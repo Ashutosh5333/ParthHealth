@@ -188,36 +188,15 @@ export const SignupPage: React.FC = () => {
     </div>
   );
 };
-
 const styles: Record<string, React.CSSProperties> = {
-  successOverlay: {
-    position: "fixed",
-    inset: 0,
-    background: "rgba(7, 22, 40, 0.85)", // Dark semi-transparent background
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    zIndex: 1000,
-    backdropFilter: "blur(10px)",
-  },
-  successCard: {
-    background: "var(--bg-card)",
-    padding: "48px",
-    borderRadius: "28px",
-    textAlign: "center",
-    border: "1px solid var(--accent)",
-    boxShadow: "0 0 50px rgba(0, 212, 170, 0.15)",
-    maxWidth: "360px",
-    animation: "scaleUp 0.3s ease-out",
-  },
   page: {
     minHeight: "100vh",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    padding: 20,
+    padding: "20px",
     position: "relative",
-    overflow: "hidden",
+    overflowX: "hidden",
   },
   grid: {
     position: "fixed",
@@ -235,8 +214,7 @@ const styles: Record<string, React.CSSProperties> = {
     left: "-10%",
     width: "50%",
     height: "60%",
-    background:
-      "radial-gradient(circle, rgba(0,212,170,0.08) 0%, transparent 70%)",
+    background: "radial-gradient(circle, rgba(0,212,170,0.08) 0%, transparent 70%)",
     pointerEvents: "none",
   },
   glow2: {
@@ -245,37 +223,33 @@ const styles: Record<string, React.CSSProperties> = {
     right: "-10%",
     width: "50%",
     height: "60%",
-    background:
-      "radial-gradient(circle, rgba(79,163,232,0.07) 0%, transparent 70%)",
+    background: "radial-gradient(circle, rgba(79,163,232,0.07) 0%, transparent 70%)",
     pointerEvents: "none",
   },
   container: {
     display: "flex",
+    flexDirection: "row", // Will be overridden by CSS for mobile
     width: "100%",
-    maxWidth: 960,
-    minHeight: 580,
+    maxWidth: 1000,
+    minHeight: 600,
     borderRadius: 24,
     overflow: "hidden",
     border: "1px solid var(--border)",
     boxShadow: "0 20px 80px rgba(0,0,0,0.6)",
     position: "relative",
     zIndex: 1,
+    flexWrap: "wrap", // Allows wrapping on small screens
   },
   leftPanel: {
-    flex: 1,
+    flex: "1 1 400px", // Grow, shrink, and set a base
     background: "linear-gradient(135deg, #0a2040 0%, #071628 100%)",
     padding: "48px 40px",
     display: "flex",
     flexDirection: "column",
     gap: 32,
     borderRight: "1px solid var(--border)",
-    minWidth: 0,
   },
-  logoArea: {
-    display: "flex",
-    alignItems: "center",
-    gap: 12,
-  },
+  logoArea: { display: "flex", alignItems: "center", gap: 12 },
   logoIcon: {
     width: 48,
     height: 48,
@@ -309,7 +283,7 @@ const styles: Record<string, React.CSSProperties> = {
   heroTitle: {
     fontFamily: "var(--font-display)",
     fontWeight: 800,
-    fontSize: 42,
+    fontSize: "clamp(32px, 5vw, 42px)", // Responsive font size
     lineHeight: 1.1,
     letterSpacing: "-1px",
     color: "var(--text-primary)",
@@ -322,11 +296,12 @@ const styles: Record<string, React.CSSProperties> = {
   },
   statsRow: {
     display: "flex",
-    gap: 24,
+    gap: 20,
     borderTop: "1px solid var(--border)",
     paddingTop: 24,
+    flexWrap: "wrap",
   },
-  stat: { flex: 1 },
+  stat: { minWidth: "80px" },
   statValue: {
     fontFamily: "var(--font-display)",
     fontWeight: 700,
@@ -345,13 +320,12 @@ const styles: Record<string, React.CSSProperties> = {
   },
   pulseText: { fontSize: 12, color: "var(--text-muted)" },
   rightPanel: {
-    width: 420,
+    flex: "1 1 400px", // Matches left panel for equal stacking
     background: "var(--bg-card)",
     padding: "48px 40px",
     display: "flex",
     flexDirection: "column",
     gap: 20,
-    flexShrink: 0,
   },
   formTitle: {
     fontFamily: "var(--font-display)",
@@ -361,9 +335,10 @@ const styles: Record<string, React.CSSProperties> = {
     color: "var(--text-primary)",
   },
   formSub: { fontSize: 14, color: "var(--text-secondary)", marginTop: -12 },
-  demoRow: { display: "flex", gap: 8 },
+  demoRow: { display: "flex", gap: 8, flexWrap: "wrap" },
   demoBtn: {
     flex: 1,
+    minWidth: "80px",
     padding: "8px 12px",
     background: "var(--bg-elevated)",
     border: "1px solid var(--border)",
@@ -372,7 +347,6 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: 13,
     fontWeight: 500,
     cursor: "pointer",
-    transition: "all 0.2s",
     fontFamily: "var(--font-body)",
   },
   form: { display: "flex", flexDirection: "column", gap: 18 },
@@ -387,7 +361,6 @@ const styles: Record<string, React.CSSProperties> = {
     color: "var(--text-primary)",
     fontSize: 15,
     outline: "none",
-    transition: "all 0.2s",
     fontFamily: "var(--font-body)",
   },
   eyeBtn: {
@@ -399,16 +372,14 @@ const styles: Record<string, React.CSSProperties> = {
     border: "none",
     cursor: "pointer",
     fontSize: 16,
-    padding: "4px",
-    lineHeight: 1,
   },
   errorBox: {
-    background: "var(--red-dim)",
+    background: "rgba(240,86,86,0.1)",
     border: "1px solid rgba(240,86,86,0.3)",
     borderRadius: 8,
     padding: "10px 14px",
     fontSize: 14,
-    color: "var(--red)",
+    color: "#f05656",
     display: "flex",
     alignItems: "center",
     gap: 8,
@@ -423,16 +394,33 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: 15,
     fontWeight: 700,
     cursor: "pointer",
-    transition: "all 0.2s",
     fontFamily: "var(--font-display)",
-    letterSpacing: "0.5px",
     marginTop: 4,
   },
   hint: {
     fontSize: 12,
     color: "var(--text-muted)",
     textAlign: "center",
-    marginTop: "auto",
-    paddingTop: 16,
+    marginTop: 20,
+  },
+  successOverlay: {
+    position: "fixed",
+    inset: 0,
+    background: "rgba(7, 22, 40, 0.85)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 1000,
+    backdropFilter: "blur(10px)",
+    padding: 20,
+  },
+  successCard: {
+    background: "var(--bg-card)",
+    padding: "40px",
+    borderRadius: "28px",
+    textAlign: "center",
+    border: "1px solid var(--accent)",
+    width: "100%",
+    maxWidth: "360px",
   },
 };
