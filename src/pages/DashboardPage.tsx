@@ -1,295 +1,153 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAppSelector, useAppDispatch } from '../hooks/redux';
+import { useAppDispatch, useAppSelector } from '../hooks/redux';
+import { setSelectedPatient } from '../store/slices/patientsSlice';
 import { addNotification } from '../store/slices/notificationsSlice';
-import { NotificationService } from '../utils/notificationService';
+import { ANALYTICS_DATA, DOCTORS, ACTIVITY_FEED } from '../utils/mockData';
+import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 
-const StatCard: React.FC<{ label: string; value: string | number; sub: string; color: string; icon: string }> = ({ label, value, sub, color, icon }) => (
-  <div style={{ ...cardStyles.card, borderTop: `3px solid ${color}` }} className="animate-in">
-    <div style={cardStyles.header}>
-      <div style={{ ...cardStyles.icon, background: `${color}22`, color }}>{icon}</div>
-      <span style={cardStyles.label}>{label}</span>
-    </div>
-    <div style={{ ...cardStyles.value, color }}>{value}</div>
-    <div style={cardStyles.sub}>{sub}</div>
+const StatCard = ({ label, value, color, delta, deltaUp }: { label: string; value: string | number; color: string; delta: string; deltaUp: boolean }) => (
+  <div style={{ background: 'var(--navy3)', border: '1px solid var(--border)', borderRadius: 12, padding: 16, position: 'relative', overflow: 'hidden' }}>
+    <div style={{ position: 'absolute', top: 0, right: 0, width: 60, height: 60, borderRadius: '50%', background: `${color}22`, transform: 'translate(20px,-20px)' }} />
+    <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text3)', marginBottom: 8 }}>{label}</div>
+    <div style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 700, color, lineHeight: 1 }}>{value}</div>
+    <div style={{ fontSize: 11, marginTop: 6, color: deltaUp ? 'var(--green)' : 'var(--red)' }}>{delta}</div>
   </div>
 );
 
-const cardStyles: Record<string, React.CSSProperties> = {
-  card: {
-    background: 'var(--bg-card)',
-    border: '1px solid var(--border)',
-    borderRadius: 'var(--radius-lg)',
-    padding: '24px',
-    transition: 'transform 0.2s, border-color 0.2s',
-  },
-  header: { display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 },
-  icon: { width: 36, height: 36, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 },
-  label: { fontSize: 13, color: 'var(--text-muted)', fontWeight: 500, textTransform: 'uppercase' as const, letterSpacing: 0.5 },
-  value: { fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 36, letterSpacing: '-1px' },
-  sub: { fontSize: 13, color: 'var(--text-secondary)', marginTop: 4 },
-};
-
-const DashboardPage: React.FC = () => {
+export default function DashboardPage() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const { user } = useAppSelector(s => s.auth);
-  const { patients } = useAppSelector(s => s.patients);
+  const patients = useAppSelector(s => s.patients.patients);
+  const user = useAppSelector(s => s.auth.user);
 
-  const criticalCount = patients.filter(p => p.status === 'Critical').length;
-  const stableCount = patients.filter(p => p.status === 'Stable').length;
-  const recoveringCount = patients.filter(p => p.status === 'Recovering').length;
+  const critical = patients.filter(p => p.status === 'Critical');
+  const weekData = ANALYTICS_DATA.weekly.labels.map((l, i) => ({ day: l, admissions: ANALYTICS_DATA.weekly.admissions[i] }));
 
   useEffect(() => {
-    NotificationService.register();
-    // Simulate real-time critical alert after 3s
-    const timer = setTimeout(() => {
-      dispatch(addNotification({
-        title: 'Vitals Alert',
-        message: 'Mohammed Ali Khan O2 saturation critical — check ICU-1',
-        type: 'alert',
-      }));
+    const t = setTimeout(() => {
+      dispatch(addNotification({ title: 'Auto Alert', message: 'Critical vitals change detected in ICU-3 (Arjun Sharma)', time: 'just now', type: 'critical', unread: true }));
     }, 3000);
-    return () => clearTimeout(timer);
-  }, [dispatch]);
+    return () => clearTimeout(t);
+  }, []);
 
-  const recentActivities = [
-    { time: '09:15', event: 'Mohammed Ali Khan admitted to ICU-1', type: 'alert' },
-    { time: '08:45', event: 'Lab results ready for Arjun Sharma', type: 'info' },
-    { time: '08:30', event: 'Dr. Vikram Singh started rounds', type: 'success' },
-    { time: '07:55', event: 'Deepak Nambiar discharge completed', type: 'success' },
-    { time: '07:30', event: 'Night shift handover completed', type: 'info' },
-  ];
-
-  const actColors: Record<string, string> = {
-    alert: 'var(--red)', info: 'var(--blue)', success: 'var(--accent)', warning: 'var(--yellow)'
+  const handlePatient = (id: string) => {
+    dispatch(setSelectedPatient(id));
+    navigate(`/patients/${id}`);
   };
 
   return (
-    <div style={styles.page} className="animate-in">
-      {/* Welcome banner */}
-      <div style={styles.banner}>
-        <div>
-          <h1 style={styles.welcome}>Good morning, {user?.displayName?.split(' ').slice(-1)[0]} 👋</h1>
-          <p style={styles.welcomeSub}>Here's what's happening across the facility today.</p>
+    <div style={{ height: '100%', overflowY: 'auto', padding: 20 }}>
+      {/* Page Header */}
+      <div style={{ marginBottom: 20 }}>
+        <div style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 700, color: 'var(--text1)', marginBottom: 4 }}>
+          Good morning, {user?.name}
         </div>
-        <div style={styles.bannerBadge}>
-          <span className="status-dot dot-stable" />
-          <span style={{ color: 'var(--accent)', fontWeight: 600, fontSize: 13 }}>Live Dashboard</span>
+        <div style={{ fontSize: 13, color: 'var(--text2)' }}>
+          {new Date().toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} — {critical.length} critical patient{critical.length !== 1 ? 's' : ''} need attention
         </div>
       </div>
 
-      {/* Stats grid */}
-      <div style={styles.statsGrid}>
-        <StatCard label="Total Patients" value={patients.length} sub="Currently admitted" color="var(--blue)" icon="👥" />
-        <StatCard label="Critical" value={criticalCount} sub="Requires immediate care" color="var(--red)" icon="⚠️" />
-        <StatCard label="Stable" value={stableCount} sub="Under observation" color="var(--accent)" icon="✓" />
-        <StatCard label="Recovering" value={recoveringCount} sub="On treatment plan" color="var(--yellow)" icon="↑" />
+      {/* Stats */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12, marginBottom: 20 }}>
+        <StatCard label="Total Patients" value="248" color="var(--teal)" delta="↑ 12 this week" deltaUp />
+        <StatCard label="Critical" value={critical.length} color="var(--red)" delta="↑ 1 since yesterday" deltaUp={false} />
+        <StatCard label="Bed Occupancy" value="84%" color="var(--blue)" delta="↑ 3% vs last week" deltaUp />
+        <StatCard label="Avg Wait (min)" value="14" color="var(--amber)" delta="↓ 3 min improved" deltaUp />
+        <StatCard label="Docs on Duty" value="7" color="var(--purple)" delta="2 more from 2PM" deltaUp />
       </div>
 
-      <div style={styles.lower}>
-        {/* Critical patients */}
-        <div className="card" style={{ flex: '1 1 500px' }}>
-          <div style={styles.sectionHeader}>
-            <h3 style={styles.sectionTitle}>⚡ Critical Patients</h3>
-            <button style={styles.viewAllBtn} onClick={() => navigate('/patients')}>View All →</button>
+      {/* Main Grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 16 }}>
+        {/* Admission chart */}
+        <div className="card" style={{ gridColumn: 'span 2' } as any}>
+          <div className="card-head">
+            <span className="card-title">Weekly Admissions</span>
+            <button className="card-action" onClick={() => navigate('/analytics')}>Full Analytics →</button>
           </div>
-          <div style={styles.patientList}>
-            {patients.filter(p => p.status === 'Critical').map(p => (
-              <div key={p.id} style={styles.patientRow} onClick={() => navigate(`/patients/${p.id}`)}>
-                <div style={styles.patientAvatar}>
-                  {p.name.charAt(0)}
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={styles.patientName}>{p.name}</div>
-                  <div style={styles.patientInfo}>{p.condition} · {p.room}</div>
-                </div>
-                <div style={{ textAlign: 'right' as const }}>
-                  <div style={styles.vitals}>❤️ {p.vitals.heartRate} bpm</div>
-                  <div style={styles.vitals}>O₂ {p.vitals.oxygenSaturation}%</div>
-                </div>
+          <ResponsiveContainer width="100%" height={180}>
+            <AreaChart data={weekData}>
+              <defs>
+                <linearGradient id="admGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#00d4aa" stopOpacity={0.3}/>
+                  <stop offset="95%" stopColor="#00d4aa" stopOpacity={0}/>
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+              <XAxis dataKey="day" tick={{ fill: '#4a6080', fontSize: 11 }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fill: '#4a6080', fontSize: 11 }} axisLine={false} tickLine={false} />
+              <Tooltip contentStyle={{ background: 'var(--navy3)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 12, color: 'var(--text1)' }} />
+              <Area type="monotone" dataKey="admissions" stroke="#00d4aa" strokeWidth={2} fill="url(#admGrad)" />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Critical Patients */}
+        <div className="card">
+          <div className="card-head">
+            <span className="card-title">Critical Patients</span>
+            <button className="card-action" onClick={() => navigate('/patients')}>View All →</button>
+          </div>
+          {critical.map(p => (
+            <div key={p.id} onClick={() => handlePatient(p.id)} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 10, borderRadius: 8, cursor: 'pointer', borderBottom: '1px solid var(--border)', transition: 'background 0.15s' }}
+              onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.03)')}
+              onMouseLeave={e => (e.currentTarget.style.background = 'none')}>
+              <div className="avatar" style={{ width: 36, height: 36, background: p.avatar, fontSize: 12 }}>{p.initials}</div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 13.5, fontWeight: 500, color: 'var(--text1)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</div>
+                <div style={{ fontSize: 11, color: 'var(--text2)' }}>{p.condition}</div>
+              </div>
+              <div style={{ textAlign: 'right', flexShrink: 0 }}>
                 <span className="badge badge-critical">Critical</span>
+                <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>{p.room}</div>
               </div>
-            ))}
-            {patients.filter(p => p.status === 'Critical').length === 0 && (
-              <p style={{ color: 'var(--text-muted)', fontSize: 14, padding: 16 }}>No critical patients</p>
-            )}
-          </div>
+            </div>
+          ))}
         </div>
 
-        {/* Activity feed */}
-        <div className="card" style={{ flex: '1 1 300px' }}>
-          <h3 style={styles.sectionTitle}>📋 Recent Activity</h3>
-          <div style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 0 }}>
-            {recentActivities.map((a, i) => (
-              <div key={i} style={styles.activityItem}>
-                <div style={{ ...styles.actDot, background: actColors[a.type] || 'var(--blue)' }} />
-                <div>
-                  <div style={styles.actText}>{a.event}</div>
-                  <div style={styles.actTime}>{a.time}</div>
-                </div>
+        {/* Activity Feed */}
+        <div className="card">
+          <div className="card-head"><span className="card-title">Activity Feed</span></div>
+          {ACTIVITY_FEED.map((a, i) => (
+            <div key={i} style={{ display: 'flex', gap: 12, padding: '10px 0', borderBottom: i < ACTIVITY_FEED.length - 1 ? '1px solid var(--border)' : 'none' }}>
+              <div style={{ width: 8, height: 8, borderRadius: '50%', background: a.color, flexShrink: 0, marginTop: 5 }} />
+              <div>
+                <div style={{ fontSize: 13, color: 'var(--text2)', lineHeight: 1.5 }} dangerouslySetInnerHTML={{ __html: a.text.replace(/<strong>/g, '<strong style="color:var(--text1);font-weight:500">') }} />
+                <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>{a.time}</div>
               </div>
-            ))}
-          </div>
+            </div>
+          ))}
         </div>
-      </div>
 
-      {/* Doctors on duty */}
-      <div className="card">
-        <h3 style={{ ...styles.sectionTitle, marginBottom: 20 }}>👨‍⚕️ Doctors On Duty Today</h3>
-        <div style={styles.doctorsGrid}>
-          {[
-            { name: 'Dr. Priya Nair', specialty: 'Cardiology', patients: 3, status: 'Available' },
-            { name: 'Dr. Rahul Mehta', specialty: 'Endocrinology', patients: 2, status: 'In Rounds' },
-            { name: 'Dr. Anita Gupta', specialty: 'Internal Medicine', patients: 2, status: 'Available' },
-            { name: 'Dr. Vikram Singh', specialty: 'Surgery', patients: 2, status: 'In Surgery' },
-          ].map(d => (
-            <div key={d.name} style={styles.doctorCard}>
-              <div style={styles.doctorAvatar}>{d.name.split(' ').map(w => w[0]).slice(1).join('')}</div>
-              <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>{d.name}</div>
-                <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{d.specialty}</div>
+        {/* Doctors on Duty */}
+        <div className="card">
+          <div className="card-head"><span className="card-title">Doctors on Duty</span></div>
+          {DOCTORS.map((d, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 0', borderBottom: i < DOCTORS.length - 1 ? '1px solid var(--border)' : 'none' }}>
+              <div style={{ width: 8, height: 8, borderRadius: '50%', background: d.status === 'online' ? 'var(--green)' : 'var(--amber)', flexShrink: 0 }} />
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text1)' }}>{d.name}</div>
+                <div style={{ fontSize: 11, color: 'var(--text2)' }}>{d.dept}</div>
               </div>
-              <div style={{ marginLeft: 'auto', textAlign: 'right' as const }}>
-                <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{d.patients} patients</div>
-                <div style={{
-                  fontSize: 11, fontWeight: 600,
-                  color: d.status === 'Available' ? 'var(--accent)' : d.status === 'In Surgery' ? 'var(--red)' : 'var(--yellow)'
-                }}>
-                  {d.status}
-                </div>
+              <span className={`badge badge-${d.status}`}>{d.status}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* Dept Occupancy */}
+        <div className="card">
+          <div className="card-head"><span className="card-title">Dept. Occupancy</span></div>
+          {ANALYTICS_DATA.departments.map(d => (
+            <div key={d.name} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+              <div style={{ fontSize: 12, color: 'var(--text2)', width: 72, flexShrink: 0 }}>{d.name}</div>
+              <div style={{ flex: 1, background: 'var(--navy4)', borderRadius: 4, height: 8, overflow: 'hidden' }}>
+                <div style={{ width: `${d.value + 30}%`, height: '100%', background: d.color, borderRadius: 4, transition: 'width 0.5s' }} />
               </div>
+              <div style={{ fontSize: 12, color: 'var(--text1)', width: 36, textAlign: 'right' }}>{d.value + 30}%</div>
             </div>
           ))}
         </div>
       </div>
     </div>
   );
-};
-
-const styles: Record<string, React.CSSProperties> = {
-  page: { display: 'flex', flexDirection: 'column', gap: 24 },
-
-  banner: {
-    background: 'linear-gradient(135deg, var(--bg-card) 0%, rgba(0,212,170,0.08) 100%)',
-    border: '1px solid var(--border)',
-    borderRadius: 'var(--radius-lg)',
-    padding: '24px 28px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    flexWrap: 'wrap', 
-    gap: 16
-  },
-
-  // banner: {
-  //   background: 'linear-gradient(135deg, var(--bg-card) 0%, rgba(0,212,170,0.08) 100%)',
-  //   border: '1px solid var(--border)',
-  //   borderRadius: 'var(--radius-lg)',
-  //   padding: '24px 28px',
-  //   display: 'flex',
-  //   alignItems: 'center',
-  //   justifyContent: 'space-between',
-  // },
-
-  welcome: { fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 24, marginBottom: 4 },
-  welcomeSub: { color: 'var(--text-secondary)', fontSize: 14 },
-  bannerBadge: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 8,
-    background: 'var(--accent-dim)',
-    border: '1px solid rgba(0,212,170,0.25)',
-    borderRadius: 100,
-    padding: '8px 16px',
-  },
-  statsGrid: { display: 'grid', 
-    // gridTemplateColumns: 'repeat(4, 1fr)', 
-    gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-    gap: 16 },
-  lower: { display: 'flex',
-    flexWrap: 'wrap', 
-    gap: 20 },
-    
-  sectionHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
-  sectionTitle: { fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 16 },
-  viewAllBtn: {
-    background: 'none',
-    border: 'none',
-    color: 'var(--accent)',
-    fontSize: 13,
-    cursor: 'pointer',
-    fontFamily: 'var(--font-body)',
-  },
-  patientList: { display: 'flex', flexDirection: 'column', gap: 12 },
-  patientRow: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 14,
-    padding: '12px 16px',
-    background: 'var(--bg-elevated)',
-    borderRadius: 10,
-    cursor: 'pointer',
-    border: '1px solid transparent',
-    transition: 'border-color 0.2s',
-  },
-  patientAvatar: {
-    width: 36,
-    height: 36,
-    background: 'var(--red-dim)',
-    border: '1px solid rgba(240,86,86,0.3)',
-    borderRadius: 8,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: 15,
-    fontWeight: 700,
-    color: 'var(--red)',
-    flexShrink: 0,
-  },
-  patientName: { fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' },
-  patientInfo: { fontSize: 12, color: 'var(--text-muted)', marginTop: 2 },
-  vitals: { fontSize: 12, color: 'var(--text-secondary)' },
-  activityItem: {
-    display: 'flex',
-    gap: 12,
-    padding: '10px 0',
-    borderBottom: '1px solid var(--border)',
-    alignItems: 'flex-start',
-  },
-  actDot: { width: 8, height: 8, borderRadius: '50%', marginTop: 5, flexShrink: 0 },
-  actText: { fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.5 },
-  actTime: { fontSize: 11, color: 'var(--text-muted)', marginTop: 3 },
-  // doctorsGrid: { display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 },
-  doctorsGrid: { 
-    display: 'grid', 
-    gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', // Wraps doctor cards
-    gap: 12 
-  },
-
-  doctorCard: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 12,
-    padding: '14px 16px',
-    background: 'var(--bg-elevated)',
-    borderRadius: 10,
-    border: '1px solid var(--border)',
-  },
-  doctorAvatar: {
-    width: 38,
-    height: 38,
-    background: 'var(--blue-dim)',
-    border: '1px solid rgba(79,163,232,0.3)',
-    borderRadius: 8,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: 14,
-    fontWeight: 700,
-    color: 'var(--blue)',
-    flexShrink: 0,
-  },
-};
-
-export default DashboardPage;
+}

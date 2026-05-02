@@ -1,6 +1,6 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { Notification } from '../../types';
-import { mockNotifications } from '../../utils/mockData';
+import { INITIAL_NOTIFICATIONS } from '../../utils/mockData';
 
 interface NotificationsState {
   notifications: Notification[];
@@ -8,7 +8,7 @@ interface NotificationsState {
 }
 
 const initialState: NotificationsState = {
-  notifications: mockNotifications,
+  notifications: INITIAL_NOTIFICATIONS,
   panelOpen: false,
 };
 
@@ -16,29 +16,18 @@ const notificationsSlice = createSlice({
   name: 'notifications',
   initialState,
   reducers: {
-    addNotification: (state, action: PayloadAction<Omit<Notification, 'id' | 'timestamp' | 'read'>>) => {
-      state.notifications.unshift({
-        ...action.payload,
-        id: `N${Date.now()}`,
-        timestamp: new Date().toISOString(),
-        read: false,
-      });
+    addNotification: (state, action: PayloadAction<Omit<Notification, 'id'>>) => {
+      state.notifications.unshift({ ...action.payload, id: Date.now() });
     },
-    markAsRead: (state, action: PayloadAction<string>) => {
-      const n = state.notifications.find(n => n.id === action.payload);
-      if (n) n.read = true;
+    markAllRead: (state) => { state.notifications.forEach((n) => { n.unread = false; }); },
+    markRead: (state, action: PayloadAction<number>) => {
+      const n = state.notifications.find((x) => x.id === action.payload);
+      if (n) n.unread = false;
     },
-    markAllRead: (state) => {
-      state.notifications.forEach(n => { n.read = true; });
-    },
-    togglePanel: (state) => {
-      state.panelOpen = !state.panelOpen;
-    },
-    closePanel: (state) => {
-      state.panelOpen = false;
-    },
+    togglePanel: (state) => { state.panelOpen = !state.panelOpen; },
+    closePanel: (state) => { state.panelOpen = false; },
   },
 });
 
-export const { addNotification, markAsRead, markAllRead, togglePanel, closePanel } = notificationsSlice.actions;
+export const { addNotification, markAllRead, markRead, togglePanel, closePanel } = notificationsSlice.actions;
 export default notificationsSlice.reducer;

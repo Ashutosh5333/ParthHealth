@@ -1,252 +1,227 @@
-import React, { useRef, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import React, { useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../../hooks/redux';
-import { togglePanel, markAllRead, closePanel } from '../../store/slices/notificationsSlice';
+import { togglePanel, addNotification } from '../../store/slices/notificationsSlice';
+import { setSearchQuery } from '../../store/slices/patientsSlice';
 import { NotificationService } from '../../utils/notificationService';
-import { addNotification } from '../../store/slices/notificationsSlice';
 
-const pageTitles: Record<string, string> = {
+interface Props { onMenuClick: () => void; }
+
+const PAGE_TITLES: Record<string, string> = {
   '/dashboard': 'Dashboard',
   '/analytics': 'Analytics',
-  '/patients': 'Patient Management',
+  '/patients': 'Patients',
 };
 
-const Header: React.FC<{ onMenuClick?: () => void }> = ({ onMenuClick }) => {
+export default function Header({ onMenuClick }: Props) {
   const dispatch = useAppDispatch();
+  const navigate = useNavigate();
   const location = useLocation();
-  const { notifications, panelOpen } = useAppSelector(s => s.notifications);
-  const { user } = useAppSelector(s => s.auth);
-  const panelRef = useRef<HTMLDivElement>(null);
+  const unread = useAppSelector(s =>
+    s.notifications.notifications.filter(n => n.unread).length
+  );
+  const [search, setSearch] = useState('');
 
-  const unread = notifications.filter(n => !n.read).length;
-  const title = pageTitles[location.pathname] || 'Dashboard';
+  const pageTitle =
+    Object.entries(PAGE_TITLES).find(([k]) => location.pathname.startsWith(k))?.[1]
+    || 'RAGA Health';
 
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
-        dispatch(closePanel());
-      }
-    };
-    if (panelOpen) document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [panelOpen, dispatch]);
-
-  const handleTestNotification = async () => {
-    const notif = {
-      title: 'Critical Alert',
-      message: 'Patient P001 heart rate spiked to 135 bpm',
-      type: 'alert' as const,
-    };
-    dispatch(addNotification(notif));
-    await NotificationService.showLocalNotification(notif.title, notif.message, notif.type);
+  const handleSearch = (v: string) => {
+    setSearch(v);
+    dispatch(setSearchQuery(v));
+    if (v && !location.pathname.includes('/patients')) navigate('/patients');
   };
 
-  const typeColors: Record<string, string> = {
-    alert: 'var(--red)',
-    warning: 'var(--yellow)',
-    success: 'var(--accent)',
-    info: 'var(--blue)',
-  };
-
-  const formatTime = (ts: string) => {
-    const d = new Date(ts);
-    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const handleTestAlert = async () => {
+    dispatch(addNotification({
+      title: 'Test Critical Alert',
+      message: 'Manual test alert triggered from header',
+      time: 'just now',
+      type: 'critical',
+      unread: true,
+    }));
+    await NotificationService.showNotification('RAGA Health Alert', 'Manual test alert triggered');
+    dispatch(togglePanel());
   };
 
   return (
-    <header style={styles.header}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-      
-        <button 
-          onClick={onMenuClick} 
-          style={styles.menuToggle}
-          className="mobile-only"
+    <>
+      {/* Inject responsive CSS for header elements */}
+      <style>{`
+        .hdr-menu-btn { display: none !important; }
+        .hdr-search   { display: flex !important; }
+        .hdr-alert    { display: flex !important; }
+        @media (max-width: 900px) {
+          .hdr-menu-btn { display: flex !important; }
+          .hdr-search   { display: none !important; }
+        }
+        @media (max-width: 600px) {
+          .hdr-alert { display: none !important; }
+        }
+      `}</style>
+
+      <header style={{
+        height: 'var(--header)',
+        background: 'var(--navy2)',
+        borderBottom: '1px solid var(--border)',
+        display: 'flex',
+        alignItems: 'center',
+        padding: '0 20px',
+        gap: 12,
+        flexShrink: 0,
+        position: 'relative',
+        zIndex: 50,
+      }}>
+
+        {/* Hamburger — CSS controls visibility, not JS */}
+        <button
+          className="hdr-menu-btn"
+          onClick={onMenuClick}
+          aria-label="Open menu"
+          style={{
+            width: 36, height: 36,
+            background: 'none',
+            border: '1px solid var(--border2)',
+            borderRadius: 8,
+            cursor: 'pointer',
+            color: 'var(--text2)',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0,
+            transition: 'all 0.2s',
+          }}
         >
-          ☰
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <line x1="3" y1="6" x2="21" y2="6"/>
+            <line x1="3" y1="12" x2="21" y2="12"/>
+            <line x1="3" y1="18" x2="21" y2="18"/>
+          </svg>
         </button>
-        
-        <div style={styles.titleArea}>
-          <h2 style={styles.title}>{title}</h2>
-       
-          <div style={{...styles.breadcrumb, display: window.innerWidth < 480 ? 'none' : 'block'}}>
-            {user?.displayName} · {new Date().toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' })}
-          </div>
+
+        {/* Page title */}
+        <div style={{
+          fontFamily: 'var(--font-display)',
+          fontSize: 16, fontWeight: 600,
+          color: 'var(--text1)',
+          flex: 1,
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+        }}>
+          {pageTitle}
         </div>
-      </div>
 
-    
-      <div style={styles.actions}>
-        <button style={styles.testBtn} onClick={handleTestNotification} title="Trigger test notification">
-          {/* ⚡ Test Alert */}
-          {window.innerWidth <= 768 ? '⚡' : '⚡ Test Alert'}
-        </button>
+        {/* Search — hidden on mobile via CSS */}
+        <div className="hdr-search" style={{ flex: 1, maxWidth: 320, position: 'relative' }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+            style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--text3)', pointerEvents: 'none' }}>
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          <input
+            value={search}
+            onChange={e => handleSearch(e.target.value)}
+            placeholder="Search patients..."
+            style={{
+              width: '100%',
+              background: 'var(--navy3)',
+              border: '1px solid var(--border)',
+              borderRadius: 8,
+              padding: '7px 12px 7px 34px',
+              fontSize: 13,
+              color: 'var(--text1)',
+              outline: 'none',
+              fontFamily: 'var(--font-body)',
+              transition: 'border-color 0.2s',
+            }}
+            onFocus={e => (e.target.style.borderColor = 'var(--teal)')}
+            onBlur={e => (e.target.style.borderColor = 'var(--border)')}
+          />
+        </div>
 
-        <div style={{ position: 'relative' }} ref={panelRef}>
-          <button style={styles.bellBtn} onClick={() => dispatch(togglePanel())}>
-            🔔
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {/* Alert button — hidden on small screens via CSS */}
+          <button
+            className="hdr-alert"
+            onClick={handleTestAlert}
+            style={{
+              background: 'var(--red-dim)',
+              border: '1px solid rgba(255,77,109,0.3)',
+              borderRadius: 8,
+              color: 'var(--red)',
+              fontSize: 12, fontWeight: 500,
+              padding: '0 14px', height: 36,
+              cursor: 'pointer',
+              alignItems: 'center', gap: 5,
+              fontFamily: 'var(--font-body)',
+              whiteSpace: 'nowrap',
+              transition: 'background 0.2s',
+            }}
+            onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,77,109,0.2)')}
+            onMouseLeave={e => (e.currentTarget.style.background = 'var(--red-dim)')}
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: 4 }}>
+              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+              <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+            Test Alert
+          </button>
+
+          {/* Notification bell */}
+          <button
+            onClick={() => dispatch(togglePanel())}
+            aria-label="Notifications"
+            style={{
+              width: 36, height: 36,
+              background: 'none',
+              border: '1px solid var(--border)',
+              borderRadius: 8,
+              cursor: 'pointer',
+              color: 'var(--text2)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              position: 'relative',
+              transition: 'all 0.2s',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--border2)'; e.currentTarget.style.color = 'var(--text1)'; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text2)'; }}
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+              <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+            </svg>
             {unread > 0 && (
-              <span style={styles.badge}>{unread > 9 ? '9+' : unread}</span>
+              <span style={{
+                position: 'absolute', top: 6, right: 6,
+                width: 7, height: 7,
+                background: 'var(--red)',
+                borderRadius: '50%',
+                border: '1.5px solid var(--navy2)',
+              }} />
             )}
           </button>
 
-          {panelOpen && (
-            <div style={styles.panel} className="animate-in">
-              <div style={styles.panelHeader}>
-                <span style={styles.panelTitle}>Notifications</span>
-                {unread > 0 && (
-                  <button style={styles.markAllBtn} onClick={() => dispatch(markAllRead())}>
-                    Mark all read
-                  </button>
-                )}
-              </div>
-              <div style={styles.notifList}>
-                {notifications.length === 0 ? (
-                  <div style={styles.emptyNotif}>No notifications</div>
-                ) : (
-                  notifications.slice(0, 8).map(n => (
-                    <div key={n.id} style={{
-                      ...styles.notifItem,
-                      background: n.read ? 'transparent' : 'rgba(0,212,170,0.05)',
-                    }}>
-                      <div style={{ ...styles.notifDot, background: typeColors[n.type] || 'var(--blue)' }} />
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={styles.notifTitle}>{n.title}</div>
-                        <div style={styles.notifMsg}>{n.message}</div>
-                        <div style={styles.notifTime}>{formatTime(n.timestamp)}</div>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-          )}
+          {/* Profile */}
+          <button
+            aria-label="Profile"
+            style={{
+              width: 36, height: 36,
+              background: 'none',
+              border: '1px solid var(--border)',
+              borderRadius: 8,
+              cursor: 'pointer',
+              color: 'var(--text2)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              transition: 'all 0.2s',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--border2)'; e.currentTarget.style.color = 'var(--text1)'; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text2)'; }}
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="12" cy="8" r="4"/>
+              <path d="M4 20c0-4 3.58-7 8-7s8 3 8 7"/>
+            </svg>
+          </button>
         </div>
-      </div>
-    </header>
+      </header>
+    </>
   );
-};
-
-const styles: Record<string, React.CSSProperties> = {
-  header: {
-    height: 'var(--header-h)',
-    background: 'var(--bg-secondary)',
-    borderBottom: '1px solid var(--border)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    // padding: '0 32px',
-    padding: window.innerWidth <= 768 ? '0 16px' : '0 24px',
-    position: 'sticky',
-    top: 0,
-    zIndex: 50,
-  },
-  hamburger: {
-    display: window.innerWidth > 1024 ? 'none' : 'flex',
-    background: 'var(--bg-elevated)',
-    border: '1px solid var(--border)',
-    borderRadius: 8,
-    width: 36,
-    height: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: 20,
-    cursor: 'pointer',
-    color: 'var(--text-primary)',
-  },
-  menuToggle: {
-    display: window.innerWidth <= 768 ? 'block' : 'none',
-    background: 'none',
-    border: 'none',
-    fontSize: '24px',
-    color: 'var(--text-primary)',
-    cursor: 'pointer',
-    padding: 0
-  },
-  titleArea: { display: 'flex', flexDirection: 'column', gap: 2 },
-  title: { fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 20, letterSpacing: '-0.5px' },
-  breadcrumb: { fontSize: 12, color: 'var(--text-muted)' },
-  actions: { display: 'flex', alignItems: 'center', gap: 12 },
-  testBtn: {
-    padding: '7px 14px',
-    background: 'var(--yellow-dim)',
-    border: '1px solid rgba(245,166,35,0.3)',
-    borderRadius: 8,
-    color: 'var(--yellow)',
-    fontSize: 12,
-    fontWeight: 600,
-    cursor: 'pointer',
-    fontFamily: 'var(--font-body)',
-  },
-  bellBtn: {
-    position: 'relative',
-    width: 40,
-    height: 40,
-    background: 'var(--bg-elevated)',
-    border: '1px solid var(--border)',
-    borderRadius: 10,
-    fontSize: 16,
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  badge: {
-    position: 'absolute',
-    top: 4,
-    right: 4,
-    width: 16,
-    height: 16,
-    background: 'var(--red)',
-    borderRadius: '50%',
-    fontSize: 9,
-    fontWeight: 700,
-    color: 'white',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  panel: {
-    position: 'absolute',
-    top: 'calc(100% + 8px)',
-    // right: 0,
-    // width: 360,
-    background: 'var(--bg-card)',
-    border: '1px solid var(--border)',
-    borderRadius: 14,
-    boxShadow: 'var(--shadow)',
-    overflow: 'hidden',
-    width: window.innerWidth <= 400 ? 'calc(100vw - 32px)' : 360, // Full width on tiny screens
-    right: window.innerWidth <= 400 ? -16 : 0,
-  },
-  panelHeader: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: '16px 18px',
-    borderBottom: '1px solid var(--border)',
-  },
-  panelTitle: { fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 15 },
-  markAllBtn: {
-    background: 'none',
-    border: 'none',
-    color: 'var(--accent)',
-    fontSize: 12,
-    cursor: 'pointer',
-    fontFamily: 'var(--font-body)',
-  },
-  notifList: { maxHeight: 380, overflowY: 'auto' as const },
-  notifItem: {
-    display: 'flex',
-    gap: 12,
-    padding: '14px 18px',
-    borderBottom: '1px solid var(--border)',
-    transition: 'background 0.2s',
-  },
-  notifDot: { width: 8, height: 8, borderRadius: '50%', flexShrink: 0, marginTop: 5 },
-  notifTitle: { fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 2 },
-  notifMsg: { fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.5 },
-  notifTime: { fontSize: 11, color: 'var(--text-muted)', marginTop: 4 },
-  emptyNotif: { padding: 32, textAlign: 'center' as const, color: 'var(--text-muted)', fontSize: 14 },
-};
-
-export default Header;
+}

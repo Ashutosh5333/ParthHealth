@@ -1,50 +1,33 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { Patient } from '../../types';
-import { mockPatients } from '../../utils/mockData';
-
-type ViewMode = 'grid' | 'list';
-type StatusFilter = 'All' | 'Critical' | 'Stable' | 'Recovering' | 'Discharged';
+import { Patient, ViewMode, StatusFilter } from '../../types';
+import { PATIENTS } from '../../utils/mockData';
 
 interface PatientsState {
   patients: Patient[];
   viewMode: ViewMode;
   searchQuery: string;
   statusFilter: StatusFilter;
-  selectedPatient: Patient | null;
-  loading: boolean;
+  selectedPatientId: string | null;
 }
 
 const initialState: PatientsState = {
-  patients: mockPatients,
+  patients: PATIENTS,
   viewMode: 'grid',
   searchQuery: '',
-  statusFilter: 'All',
-  selectedPatient: null,
-  loading: false,
+  statusFilter: 'all',
+  selectedPatientId: null,
 };
 
 const patientsSlice = createSlice({
   name: 'patients',
   initialState,
   reducers: {
-    setViewMode: (state, action: PayloadAction<ViewMode>) => {
-      state.viewMode = action.payload;
-    },
-    setSearchQuery: (state, action: PayloadAction<string>) => {
-      state.searchQuery = action.payload;
-    },
-    setStatusFilter: (state, action: PayloadAction<StatusFilter>) => {
-      state.statusFilter = action.payload;
-    },
-    setSelectedPatient: (state, action: PayloadAction<Patient | null>) => {
-      state.selectedPatient = action.payload;
-    },
-    updatePatient: (state, action: PayloadAction<Patient>) => {
-      const idx = state.patients.findIndex(p => p.id === action.payload.id);
-      if (idx !== -1) state.patients[idx] = action.payload;
-    },
+    setViewMode: (state, action: PayloadAction<ViewMode>) => { state.viewMode = action.payload; },
+    setSearchQuery: (state, action: PayloadAction<string>) => { state.searchQuery = action.payload; },
+    setStatusFilter: (state, action: PayloadAction<StatusFilter>) => { state.statusFilter = action.payload; },
+    setSelectedPatient: (state, action: PayloadAction<string | null>) => { state.selectedPatientId = action.payload; },
   },
 });
 
-export const { setViewMode, setSearchQuery, setStatusFilter, setSelectedPatient, updatePatient } = patientsSlice.actions;
+export const { setViewMode, setSearchQuery, setStatusFilter, setSelectedPatient } = patientsSlice.actions;
 export default patientsSlice.reducer;

@@ -3,7 +3,6 @@ export interface User {
   email: string;
   displayName: string;
   role: 'admin' | 'doctor' | 'nurse';
-  avatar?: string;
   token: string;
 }
 
@@ -11,41 +10,40 @@ export interface Patient {
   id: string;
   name: string;
   age: number;
-  gender: 'Male' | 'Female' | 'Other';
-  bloodType: string;
+  gender: 'M' | 'F';
   condition: string;
   status: 'Critical' | 'Stable' | 'Recovering' | 'Discharged';
-  doctor: string;
-  admissionDate: string;
   room: string;
-  phone: string;
-  email: string;
-  insurance: string;
-  lastVisit: string;
-  nextAppointment: string;
+  bloodType: string;
+  avatar: string;
+  initials: string;
   vitals: {
-    heartRate: number;
-    bloodPressure: string;
-    temperature: number;
-    oxygenSaturation: number;
+    bp: string;
+    hr: number;
+    spo2: number;
+    temp: number;
   };
-  medications: string[];
+  medications: { name: string; dose: string; frequency: string }[];
   allergies: string[];
-  notes: string;
-}
-
-export interface AnalyticsData {
-  admissions: { month: string; count: number }[];
-  departments: { name: string; patients: number; beds: number }[];
-  outcomes: { status: string; value: number; color: string }[];
-  revenue: { month: string; revenue: number; expenses: number }[];
+  timeline: { time: string; event: string }[];
+  admittedAt: string;
 }
 
 export interface Notification {
-  id: string;
+  id: number;
   title: string;
   message: string;
-  type: 'alert' | 'info' | 'success' | 'warning';
-  timestamp: string;
-  read: boolean;
+  time: string;
+  type: 'critical' | 'info' | 'warning' | 'success';
+  unread: boolean;
 }
+
+export interface AuthUser {
+  email: string;
+  name: string;
+  role: 'admin' | 'doctor' | 'nurse';
+  initials: string;
+}
+
+export type ViewMode = 'grid' | 'list';
+export type StatusFilter = 'all' | 'Critical' | 'Stable' | 'Recovering' | 'Discharged';

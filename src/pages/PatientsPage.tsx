@@ -1,424 +1,157 @@
 import React, { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAppSelector, useAppDispatch } from '../hooks/redux';
-import { setViewMode, setSearchQuery, setStatusFilter } from '../store/slices/patientsSlice';
-import { Patient } from '../types';
+import { useAppDispatch, useAppSelector } from '../hooks/redux';
+import { setViewMode, setStatusFilter, setSelectedPatient } from '../store/slices/patientsSlice';
+import { Patient, StatusFilter, ViewMode } from '../types';
 
+const STATUS_FILTERS: { label: string; value: StatusFilter }[] = [
+  { label: 'All', value: 'all' },
+  { label: 'Critical', value: 'Critical' },
+  { label: 'Stable', value: 'Stable' },
+  { label: 'Recovering', value: 'Recovering' },
+  { label: 'Discharged', value: 'Discharged' },
+];
 
-const ResponsiveStyles = () => (
-  <style>{`
-    @media (max-width: 768px) {
-      /* Stack Top Bar */
-      .top-bar-res {
-        flex-direction: column !important;
-        align-items: flex-start !important;
-        gap: 20px !important;
-      }
-      
-      .controls-res {
-        width: 100% !important;
-        flex-direction: column !important;
-        align-items: stretch !important;
-      }
-
-      .search-wrap-res {
-        width: 100% !important;
-      }
-
-      .search-input-res {
-        width: 100% !important;
-      }
-
-      /* Handle Table Overflow */
-      .table-container-res {
-        overflow-x: auto !important;
-        -webkit-overflow-scrolling: touch;
-      }
-
-      .table-res {
-        min-width: 800px; /* Prevents text squishing */
-      }
-      
-      /* Grid adjustments */
-      .grid-res {
-        grid-template-columns: 1fr !important;
-      }
-    }
-  `}</style>
-);
-
-const StatusBadge: React.FC<{ status: Patient['status'] }> = ({ status }) => {
-  const cls = {
-    Critical: 'badge-critical',
-    Stable: 'badge-stable',
-    Recovering: 'badge-recovering',
-    Discharged: 'badge-discharged',
-  }[status];
-  const dot = {
-    Critical: 'dot-critical',
-    Stable: 'dot-stable',
-    Recovering: 'dot-recovering',
-    Discharged: 'dot-discharged',
-  }[status];
+function PatientCard({ p, onClick }: { p: Patient; onClick: () => void }) {
   return (
-    <span className={`badge ${cls}`}>
-      <span className={`status-dot ${dot}`} />
-      {status}
-    </span>
-  );
-};
-
-const PatientGridCard: React.FC<{ patient: Patient; onClick: () => void }> = ({ patient, onClick }) => (
-  <div style={gridStyles.card} className="card" onClick={onClick}>
-    <div style={gridStyles.top}>
-      <div style={gridStyles.avatar}>{patient.name.charAt(0)}</div>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={gridStyles.name}>{patient.name}</div>
-        <div style={gridStyles.id}>{patient.id} · {patient.age}y · {patient.gender}</div>
-      </div>
-      <StatusBadge status={patient.status} />
-    </div>
-
-    <div style={gridStyles.condition}>{patient.condition}</div>
-
-    <div style={gridStyles.meta}>
-      <div style={gridStyles.metaItem}>
-        <span style={gridStyles.metaLabel}>Doctor</span>
-        <span style={gridStyles.metaVal}>{patient.doctor.replace('Dr. ', '')}</span>
-      </div>
-      <div style={gridStyles.metaItem}>
-        <span style={gridStyles.metaLabel}>Room</span>
-        <span style={gridStyles.metaVal}>{patient.room}</span>
-      </div>
-      <div style={gridStyles.metaItem}>
-        <span style={gridStyles.metaLabel}>Blood</span>
-        <span style={gridStyles.metaVal}>{patient.bloodType}</span>
-      </div>
-    </div>
-
-    <div style={gridStyles.vitals}>
-      <div style={gridStyles.vital}>
-        <span>❤️</span>
-        <span>{patient.vitals.heartRate}</span>
-        <span style={gridStyles.vitalLabel}>bpm</span>
-      </div>
-      <div style={gridStyles.vital}>
-        <span>🩺</span>
-        <span>{patient.vitals.bloodPressure}</span>
-        <span style={gridStyles.vitalLabel}>mmHg</span>
-      </div>
-      <div style={gridStyles.vital}>
-        <span>🌡</span>
-        <span>{patient.vitals.temperature}</span>
-        <span style={gridStyles.vitalLabel}>°C</span>
-      </div>
-      <div style={gridStyles.vital}>
-        <span>💨</span>
-        <span>{patient.vitals.oxygenSaturation}</span>
-        <span style={gridStyles.vitalLabel}>%</span>
-      </div>
-    </div>
-  </div>
-);
-
-const gridStyles: Record<string, React.CSSProperties> = {
-  card: {
-    cursor: 'pointer',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 14,
-    transition: 'transform 0.2s, border-color 0.2s',
-  },
-  top: { display: 'flex', alignItems: 'flex-start', gap: 12 },
-  avatar: {
-    width: 42,
-    height: 42,
-    background: 'var(--blue-dim)',
-    border: '1px solid rgba(79,163,232,0.25)',
-    borderRadius: 10,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: 18,
-    fontWeight: 700,
-    color: 'var(--blue)',
-    flexShrink: 0,
-  },
-  name: { fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 2 },
-  id: { fontSize: 12, color: 'var(--text-muted)' },
-  condition: { fontSize: 13, color: 'var(--text-secondary)', fontStyle: 'italic' },
-  meta: { display: 'flex', gap: 16 },
-  metaItem: { display: 'flex', flexDirection: 'column', gap: 2 },
-  metaLabel: { fontSize: 10, color: 'var(--text-muted)', textTransform: 'uppercase' as const, letterSpacing: 0.5 },
-  metaVal: { fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)' },
-  vitals: {
-    display: 'flex',
-    gap: 8,
-    background: 'var(--bg-elevated)',
-    borderRadius: 8,
-    padding: '10px 12px',
-    justifyContent: 'space-around',
-    borderTop: '1px solid var(--border)',
-    marginTop: 4,
-  },
-  vital: { display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' },
-  vitalLabel: { fontSize: 10, color: 'var(--text-muted)', fontWeight: 400 },
-};
-
-const PatientListRow: React.FC<{ patient: Patient; onClick: () => void }> = ({ patient, onClick }) => (
-  <tr style={listStyles.row} onClick={onClick}>
-    <td style={listStyles.td}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <div style={listStyles.avatar}>{patient.name.charAt(0)}</div>
-        <div>
-          <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>{patient.name}</div>
-          <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{patient.id}</div>
+    <div onClick={onClick} className="card" style={{ cursor: 'pointer', transition: 'border-color 0.2s' }}
+      onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--border2)')}
+      onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+        <div className="avatar" style={{ width: 40, height: 40, background: p.avatar, fontSize: 13 }}>{p.initials}</div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--text1)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</div>
+          <div style={{ fontSize: 11, color: 'var(--text3)' }}>{p.id} · {p.age}y {p.gender === 'M' ? 'Male' : 'Female'} · {p.bloodType}</div>
         </div>
+        <span className={`badge badge-${p.status.toLowerCase()}`}>{p.status}</span>
       </div>
-    </td>
-    <td style={listStyles.td}><span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>{patient.age} · {patient.gender}</span></td>
-    <td style={listStyles.td}><span style={{ fontSize: 13, color: 'var(--text-secondary)', fontStyle: 'italic' }}>{patient.condition}</span></td>
-    <td style={listStyles.td}><StatusBadge status={patient.status} /></td>
-    <td style={listStyles.td}><span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>{patient.doctor}</span></td>
-    <td style={listStyles.td}><span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>{patient.room}</span></td>
-    <td style={listStyles.td}>
-      <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-        ❤️ {patient.vitals.heartRate} · O₂ {patient.vitals.oxygenSaturation}%
-      </div>
-    </td>
-  </tr>
-);
-
-const listStyles: Record<string, React.CSSProperties> = {
-  row: {
-    borderBottom: '1px solid var(--border)',
-    cursor: 'pointer',
-    transition: 'background 0.15s',
-  },
-  td: { padding: '14px 16px', verticalAlign: 'middle' as const },
-  avatar: {
-    width: 32,
-    height: 32,
-    background: 'var(--blue-dim)',
-    borderRadius: 7,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: 14,
-    fontWeight: 700,
-    color: 'var(--blue)',
-    flexShrink: 0,
-  },
-};
-
-const PatientsPage: React.FC = () => {
-  const dispatch = useAppDispatch();
-  const navigate = useNavigate();
-  const { patients, viewMode, searchQuery, statusFilter } = useAppSelector(s => s.patients);
-
-  const filtered = useMemo(() => {
-    return patients.filter(p => {
-      const matchSearch = !searchQuery ||
-        p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        p.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        p.condition.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchStatus = statusFilter === 'All' || p.status === statusFilter;
-      return matchSearch && matchStatus;
-    });
-  }, [patients, searchQuery, statusFilter]);
-
-  const filters = ['All', 'Critical', 'Stable', 'Recovering', 'Discharged'] as const;
-
-  return (
-    <div style={styles.page} className="animate-in">
-      <ResponsiveStyles />
-      
-      {/* Top bar */}
-      <div style={styles.topBar} className="top-bar-res">
-        <div>
-          <h2 style={styles.title}>Patient Registry</h2>
-          <p style={styles.sub}>{filtered.length} of {patients.length} patients</p>
-        </div>
-        <div style={styles.controls} className="controls-res">
-          {/* Search */}
-          <div style={styles.searchWrap} className="search-wrap-res">
-            <span style={styles.searchIcon}>🔍</span>
-            <input
-              type="text"
-              placeholder="Search by name, ID, condition…"
-              value={searchQuery}
-              onChange={e => dispatch(setSearchQuery(e.target.value))}
-              style={styles.searchInput}
-              className="search-input-res"
-            />
+      <div style={{ fontSize: 13, color: 'var(--text2)', marginBottom: 6 }}>{p.condition}</div>
+      <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 10 }}>Room: {p.room}</div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, paddingTop: 10, borderTop: '1px solid var(--border)' }}>
+        {[
+          { label: 'BP', value: p.vitals.bp, alert: p.status === 'Critical' },
+          { label: 'HR', value: `${p.vitals.hr} bpm`, alert: p.vitals.hr > 100 },
+          { label: 'SpO₂', value: `${p.vitals.spo2}%`, alert: p.vitals.spo2 < 95 },
+          { label: 'Temp', value: `${p.vitals.temp}°C`, alert: p.vitals.temp > 38 },
+        ].map(v => (
+          <div key={v.label}>
+            <div style={{ fontSize: 10, color: 'var(--text3)', marginBottom: 1 }}>{v.label}</div>
+            <div style={{ fontSize: 13, fontWeight: 500, color: v.alert ? 'var(--red)' : 'var(--text1)' }}>{v.value}</div>
           </div>
-
-          {/* View toggle */}
-          <div style={styles.toggleGroup}>
-            <button
-              style={{ ...styles.toggleBtn, ...(viewMode === 'grid' ? styles.toggleActive : {}) }}
-              onClick={() => dispatch(setViewMode('grid'))}
-              title="Grid View"
-            >
-              ⊞ Grid
-            </button>
-            <button
-              style={{ ...styles.toggleBtn, ...(viewMode === 'list' ? styles.toggleActive : {}) }}
-              onClick={() => dispatch(setViewMode('list'))}
-              title="List View"
-            >
-              ☰ List
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Status filter pills */}
-      <div style={styles.filterRow}>
-        {filters.map(f => (
-          <button
-            key={f}
-            onClick={() => dispatch(setStatusFilter(f))}
-            style={{
-              ...styles.filterPill,
-              ...(statusFilter === f ? styles.filterActive : {}),
-            }}
-          >
-            {f}
-            <span style={styles.filterCount}>
-              {f === 'All' ? patients.length : patients.filter(p => p.status === f).length}
-            </span>
-          </button>
         ))}
       </div>
+    </div>
+  );
+}
 
-      {/* Grid View */}
-      {viewMode === 'grid' && (
-        <div style={styles.grid} className="grid-res">
-          {filtered.map(p => (
-            <PatientGridCard key={p.id} patient={p} onClick={() => navigate(`/patients/${p.id}`)} />
+function PatientTable({ patients, onSelect }: { patients: Patient[]; onSelect: (id: string) => void }) {
+  return (
+    <div style={{ overflowX: 'auto' }}>
+      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <thead>
+          <tr>
+            {['Patient', 'Condition', 'Status', 'Room', 'BP', 'HR', 'SpO₂'].map(h => (
+              <th key={h} style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text3)', padding: '8px 12px', textAlign: 'left', borderBottom: '1px solid var(--border)', whiteSpace: 'nowrap' }}>{h}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {patients.map(p => (
+            <tr key={p.id} onClick={() => onSelect(p.id)} style={{ cursor: 'pointer' }}
+              onMouseEnter={e => { Array.from(e.currentTarget.cells).forEach(c => (c.style.background = 'rgba(255,255,255,0.02)')); }}
+              onMouseLeave={e => { Array.from(e.currentTarget.cells).forEach(c => (c.style.background = 'none')); }}>
+              <td style={{ padding: '12px', borderBottom: '1px solid var(--border)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div className="avatar" style={{ width: 30, height: 30, background: p.avatar, fontSize: 10, flexShrink: 0 }}>{p.initials}</div>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text1)' }}>{p.name}</div>
+                    <div style={{ fontSize: 11, color: 'var(--text3)' }}>{p.id}</div>
+                  </div>
+                </div>
+              </td>
+              <td style={{ padding: '12px', borderBottom: '1px solid var(--border)', fontSize: 13, color: 'var(--text2)', maxWidth: 180, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.condition}</td>
+              <td style={{ padding: '12px', borderBottom: '1px solid var(--border)' }}><span className={`badge badge-${p.status.toLowerCase()}`}>{p.status}</span></td>
+              <td style={{ padding: '12px', borderBottom: '1px solid var(--border)', fontSize: 13, color: 'var(--text2)' }}>{p.room}</td>
+              <td style={{ padding: '12px', borderBottom: '1px solid var(--border)', fontSize: 13, color: p.status === 'Critical' ? 'var(--red)' : 'var(--text1)' }}>{p.vitals.bp}</td>
+              <td style={{ padding: '12px', borderBottom: '1px solid var(--border)', fontSize: 13, color: p.vitals.hr > 100 ? 'var(--amber)' : 'var(--text1)' }}>{p.vitals.hr}</td>
+              <td style={{ padding: '12px', borderBottom: '1px solid var(--border)', fontSize: 13, color: p.vitals.spo2 < 95 ? 'var(--red)' : 'var(--teal)' }}>{p.vitals.spo2}%</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+export default function PatientsPage() {
+  const dispatch = useAppDispatch();
+  const navigate = useNavigate();
+  const { patients, viewMode, statusFilter, searchQuery } = useAppSelector(s => s.patients);
+
+  const filtered = useMemo(() => {
+    let list = statusFilter === 'all' ? patients : patients.filter(p => p.status === statusFilter);
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      list = list.filter(p =>
+        p.name.toLowerCase().includes(q) ||
+        p.condition.toLowerCase().includes(q) ||
+        p.id.toLowerCase().includes(q) ||
+        p.room.toLowerCase().includes(q)
+      );
+    }
+    return list;
+  }, [patients, statusFilter, searchQuery]);
+
+  const handleSelect = (id: string) => {
+    dispatch(setSelectedPatient(id));
+    navigate(`/patients/${id}`);
+  };
+
+  return (
+    <div style={{ height: '100%', overflowY: 'auto', padding: 20 }}>
+      <div style={{ marginBottom: 20 }}>
+        <div style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 700, marginBottom: 4 }}>Patients</div>
+        <div style={{ fontSize: 13, color: 'var(--text2)' }}>
+          Showing {filtered.length} of {patients.length} patients{searchQuery ? ` matching "${searchQuery}"` : ''}
+        </div>
+      </div>
+
+      {/* Filters + View toggle */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
+        {STATUS_FILTERS.map(f => (
+          <button key={f.value} onClick={() => dispatch(setStatusFilter(f.value))} style={{
+            padding: '6px 14px', borderRadius: 20, border: `1px solid ${statusFilter === f.value ? 'var(--teal)' : 'var(--border)'}`,
+            background: statusFilter === f.value ? 'var(--teal-dim)' : 'none',
+            color: statusFilter === f.value ? 'var(--teal)' : 'var(--text2)',
+            fontSize: 12, cursor: 'pointer', fontFamily: 'var(--font-body)', transition: 'all 0.2s',
+          }}>{f.label}</button>
+        ))}
+        <div style={{ marginLeft: 'auto', display: 'flex', border: '1px solid var(--border)', borderRadius: 8, overflow: 'hidden' }}>
+          {(['grid', 'list'] as ViewMode[]).map(v => (
+            <button key={v} onClick={() => dispatch(setViewMode(v))} style={{
+              padding: '6px 14px', background: viewMode === v ? 'var(--teal-dim)' : 'none',
+              border: 'none', color: viewMode === v ? 'var(--teal)' : 'var(--text2)',
+              cursor: 'pointer', fontSize: 12, fontFamily: 'var(--font-body)', transition: 'all 0.2s',
+            }}>{v === 'grid' ? '⊞ Grid' : '☰ List'}</button>
           ))}
         </div>
-      )}
+      </div>
 
-      {/* List View */}
-      {viewMode === 'list' && (
-        <div className="card table-container-res" style={{ padding: 0, overflow: 'hidden' }}>
-          <table style={styles.table} className="table-res">
-            <thead>
-              <tr style={styles.thead}>
-                {['Patient', 'Age / Gender', 'Condition', 'Status', 'Doctor', 'Room', 'Vitals'].map(h => (
-                  <th key={h} style={styles.th}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map(p => (
-                <PatientListRow key={p.id} patient={p} onClick={() => navigate(`/patients/${p.id}`)} />
-              ))}
-            </tbody>
-          </table>
-          {filtered.length === 0 && (
-            <div style={styles.empty}>No patients found matching your search.</div>
-          )}
+      {filtered.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text3)' }}>
+          <div style={{ fontSize: 40, marginBottom: 12 }}>🔍</div>
+          <div style={{ fontSize: 15, color: 'var(--text2)' }}>No patients found</div>
+          <div style={{ fontSize: 13, marginTop: 4 }}>Try adjusting your search or filter</div>
         </div>
-      )}
-
-      {filtered.length === 0 && viewMode === 'grid' && (
-        <div style={styles.empty}>No patients found matching your search criteria.</div>
+      ) : viewMode === 'grid' ? (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 14 }}>
+          {filtered.map(p => <PatientCard key={p.id} p={p} onClick={() => handleSelect(p.id)} />)}
+        </div>
+      ) : (
+        <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+          <PatientTable patients={filtered} onSelect={handleSelect} />
+        </div>
       )}
     </div>
   );
-};
-
-const styles: Record<string, React.CSSProperties> = {
-  page: { display: 'flex', flexDirection: 'column', gap: 20 },
-  topBar: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap' as const, gap: 16 },
-  title: { fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 22 },
-  sub: { fontSize: 13, color: 'var(--text-muted)', marginTop: 2 },
-  controls: { display: 'flex', gap: 12, alignItems: 'center' },
-  searchWrap: { position: 'relative', display: 'flex', alignItems: 'center' },
-  searchIcon: { position: 'absolute', left: 12, fontSize: 14, pointerEvents: 'none' as const },
-  searchInput: {
-    padding: '9px 14px 9px 36px',
-    background: 'var(--bg-card)',
-    border: '1px solid var(--border)',
-    borderRadius: 10,
-    color: 'var(--text-primary)',
-    fontSize: 14,
-    width: 260,
-    outline: 'none',
-    fontFamily: 'var(--font-body)',
-  },
-  toggleGroup: {
-    display: 'flex',
-    background: 'var(--bg-card)',
-    border: '1px solid var(--border)',
-    borderRadius: 10,
-    overflow: 'hidden',
-    flexShrink: 0,
-  },
-  toggleBtn: {
-    padding: '9px 16px',
-    background: 'transparent',
-    border: 'none',
-    color: 'var(--text-muted)',
-    fontSize: 13,
-    fontWeight: 500,
-    cursor: 'pointer',
-    fontFamily: 'var(--font-body)',
-    transition: 'all 0.2s',
-  },
-  toggleActive: {
-    background: 'var(--accent-dim)',
-    color: 'var(--accent)',
-  },
-  filterRow: { display: 'flex', gap: 8, flexWrap: 'wrap' as const },
-  filterPill: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 6,
-    padding: '6px 14px',
-    background: 'var(--bg-card)',
-    border: '1px solid var(--border)',
-    borderRadius: 100,
-    color: 'var(--text-secondary)',
-    fontSize: 13,
-    fontWeight: 500,
-    cursor: 'pointer',
-    transition: 'all 0.2s',
-    fontFamily: 'var(--font-body)',
-  },
-  filterActive: {
-    background: 'var(--accent-dim)',
-    borderColor: 'rgba(0,212,170,0.4)',
-    color: 'var(--accent)',
-  },
-  filterCount: {
-    background: 'var(--bg-elevated)',
-    borderRadius: 100,
-    padding: '1px 6px',
-    fontSize: 11,
-    fontWeight: 700,
-  },
-  grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(310px, 1fr))', gap: 16 },
-  table: { width: '100%', borderCollapse: 'collapse' as const },
-  thead: { background: 'var(--bg-elevated)' },
-  th: {
-    padding: '12px 16px',
-    fontSize: 11,
-    fontWeight: 700,
-    color: 'var(--text-muted)',
-    textAlign: 'left' as const,
-    textTransform: 'uppercase' as const,
-    letterSpacing: 0.5,
-  },
-  empty: {
-    padding: 48,
-    textAlign: 'center' as const,
-    color: 'var(--text-muted)',
-    fontSize: 15,
-  },
-};
-
-export default PatientsPage;
+}
