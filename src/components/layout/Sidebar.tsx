@@ -34,7 +34,7 @@ export default function Sidebar({ onClose }: Props) {
 
   return (
     <nav style={{
-      width: 'var(--sidebar)', minWidth: 'var(--sidebar)', height: '100vh',
+      width: 'var(--sidebar)', minWidth: 'var(--sidebar)', height: '100dvh',
       background: 'var(--navy2)', borderRight: '1px solid var(--border)',
       display: 'flex', flexDirection: 'column',
     }}>
