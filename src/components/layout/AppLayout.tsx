@@ -41,7 +41,14 @@ export default function AppLayout() {
   if (!isAuth) return <Navigate to="/login" replace />;
 
   return (
-    <div style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
+    // <div style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
+    <div style={{ 
+      display: 'flex', 
+      height: '100dvh', 
+      width: '100vw',
+      overflow: 'hidden',
+      position: 'fixed' 
+    }}>
 
       {/* ── Mobile: sidebar backdrop ── */}
       {isMobile && sidebarOpen && (
@@ -63,7 +70,8 @@ export default function AppLayout() {
       <div style={{
         position: isMobile ? 'fixed' : 'relative',
         top: 0, left: 0,
-        height: '100vh',
+        // height: '100vh',
+        height: '100dvh',
         zIndex: 100,
         // Only apply slide transform on mobile
         transform: isMobile
@@ -82,7 +90,7 @@ export default function AppLayout() {
         flex: 1,
         display: 'flex',
         flexDirection: 'column',
-        height: '100vh',
+        height: '100dvh',
         overflow: 'hidden',
         minWidth: 0,
       }}>
@@ -105,7 +113,7 @@ export default function AppLayout() {
         position: 'fixed', top: 0,
         right: panelOpen ? 0 : -360,
         width: 'min(340px, 100vw)',
-        height: '100vh',
+        height: '100dvh',
         background: 'var(--navy2)',
         borderLeft: '1px solid var(--border)',
         zIndex: 200,
