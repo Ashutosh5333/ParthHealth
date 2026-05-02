@@ -18,11 +18,12 @@ export default function Sidebar({ onClose }: Props) {
   const handleLogout = async () => {
     await dispatch(logoutUser());
     navigate('/login');
+    if (onClose) onClose();
   };
 
   const navStyle = (isActive: boolean): React.CSSProperties => ({
     display: 'flex', alignItems: 'center', gap: 10,
-    padding: '10px 16px',
+    padding: '12px 16px', 
     color: isActive ? 'var(--teal)' : 'var(--text2)',
     fontSize: 13.5,
     textDecoration: 'none',
@@ -34,11 +35,15 @@ export default function Sidebar({ onClose }: Props) {
 
   return (
     <nav style={{
-      width: 'var(--sidebar)', minWidth: 'var(--sidebar)', height: '100dvh',
-      background: 'var(--navy2)', borderRight: '1px solid var(--border)',
-      display: 'flex', flexDirection: 'column',
+      width: 'var(--sidebar)', 
+      minWidth: 'var(--sidebar)', 
+      height: '100dvh', 
+      background: 'var(--navy2)', 
+      borderRight: '1px solid var(--border)',
+      display: 'flex', 
+      flexDirection: 'column',
     }}>
-      {/* Logo */}
+      {/* Logo Section */}
       <div style={{ padding: '20px 20px 16px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
         <div style={{ width: 32, height: 32, background: 'var(--teal)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="#050b14">
@@ -50,8 +55,8 @@ export default function Sidebar({ onClose }: Props) {
         </div>
       </div>
 
-      {/* Nav */}
-      <div style={{ flex: 1, padding: '12px 0', overflowY: 'auto' }}>
+      {/* Navigation Links */}
+      <div style={{ flex: 1, padding: '12px 0', overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}>
         <div style={{ padding: '8px 16px 4px', fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text3)', fontWeight: 500 }}>Main</div>
         {NAV_MAIN.map(n => (
           <NavLink key={n.to} to={n.to} onClick={onClose} style={({ isActive }) => navStyle(isActive)}>
@@ -82,32 +87,50 @@ export default function Sidebar({ onClose }: Props) {
         ))}
       </div>
 
-      {/* User + logout */}
-      <div style={{ padding: 16, borderTop: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+      {/* User + Logout Section */}
+      <div style={{ 
+        padding: '16px 16px calc(16px + env(safe-area-inset-bottom))', 
+        borderTop: '1px solid var(--border)', 
+        display: 'flex', 
+        alignItems: 'center', 
+        gap: 10, 
+        flexShrink: 0,
+        background: 'var(--navy2)'
+      }}>
         <div style={{
           width: 34, height: 34, borderRadius: '50%',
           background: 'linear-gradient(135deg, var(--teal), var(--blue))',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           fontSize: 12, fontWeight: 600, color: 'var(--navy)', flexShrink: 0,
         }}>
-          {user?.displayName?.slice(0, 2).toUpperCase() || 'U'}
+          {(user?.displayName || user?.email)?.slice(0, 2).toUpperCase()}
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text1)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-            {user?.displayName || user?.email}
+            {user?.displayName || user?.email?.split('@')[0]}
           </div>
-          <div style={{ fontSize: 11, color: 'var(--teal)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            {user?.role}
+          <div style={{ fontSize: 10, color: 'var(--teal)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            {user?.role || 'Staff'}
           </div>
         </div>
         <button
           onClick={handleLogout}
           title="Sign out"
-          style={{ background: 'none', border: 'none', color: 'var(--text3)', cursor: 'pointer', padding: 4, borderRadius: 4, transition: 'color 0.2s', flexShrink: 0 }}
-          onMouseEnter={e => (e.currentTarget.style.color = 'var(--red)')}
-          onMouseLeave={e => (e.currentTarget.style.color = 'var(--text3)')}
+          style={{ 
+            background: 'rgba(255, 77, 109, 0.1)', 
+            border: 'none', 
+            color: 'var(--red)', 
+            cursor: 'pointer', 
+            padding: '8px', 
+            borderRadius: 8, 
+            transition: 'all 0.2s', 
+            flexShrink: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}
         >
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/>
           </svg>
         </button>
