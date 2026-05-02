@@ -120,6 +120,7 @@ export default function AppLayout() {
         display: 'flex', flexDirection: 'column',
         transition: 'right 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
         boxShadow: panelOpen ? '-4px 0 24px rgba(0,0,0,0.4)' : 'none',
+        paddingBottom: 'env(safe-area-inset-bottom)',
       }}>
         {/* Panel header */}
         <div style={{
@@ -138,9 +139,10 @@ export default function AppLayout() {
         </div>
 
         {/* Notification list */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: 12 }}>
+        <div style={{ flex: 1, overflowY: 'auto', padding: 12,WebkitOverflowScrolling: 'touch' }}>
           {notifications.length === 0 && (
-            <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text3)', fontSize: 13 }}>
+            <div style={{ textAlign: 'center', padding: '40px 20px', 
+            color: 'var(--text3)', fontSize: 13 }}>
               No notifications
             </div>
           )}
