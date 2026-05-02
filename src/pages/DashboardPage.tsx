@@ -41,7 +41,7 @@ export default function DashboardPage() {
       {/* Page Header */}
       <div style={{ marginBottom: 20 }}>
         <div style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 700, color: 'var(--text1)', marginBottom: 4 }}>
-          Good morning, {user?.name}
+          Good morning, {user?.displayName || "User"}
         </div>
         <div style={{ fontSize: 13, color: 'var(--text2)' }}>
           {new Date().toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} — {critical.length} critical patient{critical.length !== 1 ? 's' : ''} need attention
